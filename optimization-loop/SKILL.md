@@ -64,10 +64,12 @@ Otherwise run the single-agent workflow below.
 Invoking this loop authorizes a commit for each verified win unless the user
 explicitly says not to commit. After the correctness and measurement gates pass,
 stage only that optimization, run the repository's commit checks, and commit it
-immediately. Follow the receiving repository's commit convention. A rejected or
-blocked candidate produces no commit. When one logical optimization owns tracked
-source and generated outputs across repositories, create one atomic commit in
-each repository without including unrelated state.
+immediately. Use a concise imperative subject that names the optimization
+directly and matches the wording and capitalization of recent first-parent
+commits on the receiving branch, unless repository instructions specify another
+convention. A rejected or blocked candidate produces no commit. When one logical
+optimization owns tracked source and generated outputs across repositories,
+create one atomic commit in each repository without including unrelated state.
 
 ## Runtime boundary
 

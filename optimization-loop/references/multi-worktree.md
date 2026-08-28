@@ -12,6 +12,9 @@ target branch.
 - Verify that every supplied path is a safe worktree of the intended repository
   and that the target branch exists. Do not substitute paths or choose a branch.
   Stop if fewer than two worktrees remain usable.
+- Keep the target branch free from unrelated attached worktrees during the run.
+  Supplied workers detach before working; stop rather than detach or move an
+  unrelated checkout.
 - Do not detach, move, clean, or reuse an unrelated checkout. Supplied worker
   worktrees must be safe for the requested run.
 - Spawn exactly one persistent worker for every usable supplied worktree. The
