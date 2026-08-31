@@ -44,6 +44,10 @@ publication, and cleanup. Do not create goals, schedule workers, or spawn agents
   correctness and measurement gate after the replay.
 - Stage only the verified optimization, run repository commit checks, and create
   its final commit without waiting for separate authorization.
+- Include the verified primary-metric performance change in the commit message:
+  baseline and candidate values with units, the relative percentage, enough
+  measurement context to identify the comparison, and an unambiguous metric
+  direction. Put this evidence in the body when it would make the subject noisy.
 - Atomically fast-forward the target branch from the exact HEAD used for
   integration to the final commit. Use an expected-old-value ref update or an
   equivalent compare-and-swap operation. Never force or overwrite the branch.

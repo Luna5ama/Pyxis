@@ -67,9 +67,15 @@ stage only that optimization, run the repository's commit checks, and commit it
 immediately. Use a concise imperative subject that names the optimization
 directly and matches the wording and capitalization of recent first-parent
 commits on the receiving branch, unless repository instructions specify another
-convention. A rejected or blocked candidate produces no commit. When one logical
-optimization owns tracked source and generated outputs across repositories,
-create one atomic commit in each repository without including unrelated state.
+convention. The commit message must include the verified performance change for
+the primary metric: baseline and candidate values with units, the relative
+percentage, and enough measurement context to identify the comparison. Put this
+evidence in the body when it would make the subject noisy. State the metric
+direction unambiguously so a lower-is-better negative delta is not mistaken for
+a regression. A rejected or blocked candidate produces no commit. When one
+logical optimization owns tracked source and generated outputs across
+repositories, create one atomic commit in each repository without including
+unrelated state.
 
 ## Runtime boundary
 
