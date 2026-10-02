@@ -1,0 +1,7 @@
+interface:
+  display_name: "Pyxis Loop"
+  short_description: "Run task-owned .pyxis loops and clear them on completion"
+  default_prompt: "Use $pyxis-loop to create a task-owned .pyxis roadmap, execute one ready task at a time, and commit verified completion checkpoints."
+
+policy:
+  allow_implicit_invocation: false
