@@ -1,4 +1,4 @@
-# myskills
+# Pyxis
 
 Personal Codex skills.
 
