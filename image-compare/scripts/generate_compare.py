@@ -10,7 +10,7 @@ import sys
 
 
 PAGE = r'''<!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -46,19 +46,19 @@ footer{padding:8px 16px;color:#b8babf;font-size:12px;line-height:1.8;border-top:
 <header>
 <div id="dimensions"></div>
 <div id="toolbar">
-<label>对比维度 <select id="compare" aria-label="对比维度"></select></label>
-<button id="previous" title="左方向键">← 上一项</button>
-<button id="next" title="右方向键">下一项 →</button>
-<button id="toggle" title="空格">当前 ↔ 上一个</button>
-<label><input id="blink" type="checkbox" disabled>自动闪烁（1 秒）</label>
-<label>缩放 <select id="preset" aria-label="缩放预设"></select></label>
-<label><input id="scale" aria-label="缩放倍率" type="number" step="any" value="1">×</label>
-<label title="关闭后复制当前可见图片，保留缩放和裁切，去掉外围空白"><input id="copy-original" type="checkbox" checked>复制原图</label>
+<label>Comparison dimension <select id="compare" aria-label="Comparison dimension"></select></label>
+<button id="previous" title="Left arrow key">← Previous</button>
+<button id="next" title="Right arrow key">Next →</button>
+<button id="toggle" title="Space">Current ↔ Previous</button>
+<label><input id="blink" type="checkbox" disabled>Auto blink (1 second)</label>
+<label>Zoom <select id="preset" aria-label="Zoom preset"></select></label>
+<label><input id="scale" aria-label="Zoom factor" type="number" step="any" value="1">×</label>
+<label title="When disabled, copy the visible image with zoom and cropping, excluding surrounding blank space"><input id="copy-original" type="checkbox" checked>Copy original image</label>
 <span id="scale-error" role="alert"></span>
 </div>
 </header>
-<main id="viewport"><canvas id="canvas" aria-label="图片对比画布"></canvas><img id="copy-image" alt="" draggable="false" hidden><p id="message" role="status">正在加载图片…</p></main>
-<footer><div id="status"></div><div>左右箭头：沿所选维度切换 · 空格：当前／上一个组合 · 拖动：平移 · Alt＋滚轮：缩放 · nearest-neighbor</div></footer>
+<main id="viewport"><canvas id="canvas" aria-label="Image comparison canvas"></canvas><img id="copy-image" alt="" draggable="false" hidden><p id="message" role="status">Loading image…</p></main>
+<footer><div id="status"></div><div>Left/right arrows: cycle through the selected dimension · Space: current/previous combination · Drag: pan · Alt + wheel: zoom · Nearest-neighbor scaling (no interpolation)</div></footer>
 <script id="data" type="application/json">__DATA__</script>
 <script>
 'use strict';
@@ -91,7 +91,7 @@ function load(item) {
     entry.promise = new Promise(resolve => {
       const image = new Image();
       image.onload = () => {entry.image = image; resolve(entry)};
-      image.onerror = () => {entry.error = '图像加载失败：' + item.label; resolve(entry)};
+      image.onerror = () => {entry.error = 'Failed to load image: ' + item.label; resolve(entry)};
       image.src = item.src;
     });
     cache.set(item.src, entry);
@@ -193,7 +193,7 @@ function render() {
   shownImage = null;
   const item = images.get(imageKey(current));
   message.hidden = false;
-  message.textContent = item ? '正在加载图片…' : '此组合无图片';
+  message.textContent = item ? 'Loading image…' : 'No image for this combination';
   const display = entry => {
     if (token !== generation) return;
     shownImage = entry.image;
@@ -266,11 +266,11 @@ document.addEventListener('keydown', event => {
 
 const scales = [0.25, 0.5, 1, 2, 4, 8, 16];
 scales.forEach(value => preset.add(new Option(value + '×', String(value))));
-preset.add(new Option('自定义', 'custom')); preset.value = '1';
+preset.add(new Option('Custom', 'custom')); preset.value = '1';
 function setScale(value) {
   const error = document.querySelector('#scale-error');
   if (!Number.isFinite(value) || value <= 0) {
-    error.textContent = '请输入有限的正数'; scaleInput.value = String(scale); return;
+    error.textContent = 'Enter a finite positive number'; scaleInput.value = String(scale); return;
   }
   error.textContent = ''; scale = value; scaleInput.value = String(value);
   preset.value = scales.includes(value) ? String(value) : 'custom';
@@ -322,13 +322,13 @@ render();
 def read_manifest(path):
     manifest = json.loads(path.read_text(encoding="utf-8-sig"))
     if not isinstance(manifest, dict):
-        raise ValueError("清单必须是 JSON 对象")
-    title = manifest.get("title", "图片对比")
+        raise ValueError("Manifest must be a JSON object")
+    title = manifest.get("title", "Image Comparison")
     if not isinstance(title, str):
-        raise ValueError("title 必须是字符串")
+        raise ValueError("title must be a string")
     entries = manifest.get("images")
     if not isinstance(entries, list) or not entries:
-        raise ValueError("images 必须是非空数组")
+        raise ValueError("images must be a nonempty array")
     names = None
     dimensions = []
     images = []
@@ -336,27 +336,27 @@ def read_manifest(path):
     encoded = {}
     for index, entry in enumerate(entries, 1):
         if not isinstance(entry, dict):
-            raise ValueError(f"图片 {index} 必须是对象")
+            raise ValueError(f"Image {index} must be an object")
         values = entry.get("dimensions")
         if not isinstance(values, dict) or not values:
-            raise ValueError(f"图片 {index} 的 dimensions 必须是非空对象")
+            raise ValueError(f"Image {index}: dimensions must be a nonempty object")
         if any(not isinstance(k, str) or not isinstance(v, str) for k, v in values.items()):
-            raise ValueError(f"图片 {index} 的维度名称和取值必须是字符串")
+            raise ValueError(f"Image {index}: dimension names and values must be strings")
         if names is None:
             names = list(values)
             dimensions = [{"name": name, "values": []} for name in names]
         if set(values) != set(names):
-            raise ValueError(f"图片 {index} 的维度集合不一致")
+            raise ValueError(f"Image {index}: dimension set does not match")
         combination = tuple(values[name] for name in names)
         if combination in seen:
-            raise ValueError(f"图片 {index} 重复完整组合：{combination}")
+            raise ValueError(f"Image {index}: duplicate complete combination: {combination}")
         seen.add(combination)
         for dimension, value in zip(dimensions, combination):
             if value not in dimension["values"]:
                 dimension["values"].append(value)
         source = entry.get("path")
         if not isinstance(source, str) or not source:
-            raise ValueError(f"图片 {index} 的 path 必须是非空字符串")
+            raise ValueError(f"Image {index}: path must be a nonempty string")
         image_path = (path.parent / source).resolve()
         if image_path not in encoded:
             raw = image_path.read_bytes()
@@ -367,7 +367,7 @@ def read_manifest(path):
             elif raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
                 mime = "image/webp"
             else:
-                raise ValueError(f"不支持的图片格式：{image_path}（仅 PNG、JPEG、WebP）")
+                raise ValueError(f"Unsupported image format: {image_path} (only PNG, JPEG, and WebP are supported)")
             encoded[image_path] = f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
         images.append({"values": combination, "src": encoded[image_path], "label": source})
     return title, {"dimensions": dimensions, "images": images}
@@ -375,8 +375,8 @@ def read_manifest(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("manifest", type=Path, help="JSON 图片清单")
-    parser.add_argument("-o", "--output", type=Path, required=True, help="输出 HTML 路径")
+    parser.add_argument("manifest", type=Path, help="JSON image manifest")
+    parser.add_argument("-o", "--output", type=Path, required=True, help="Output HTML path")
     args = parser.parse_args()
     try:
         title, data = read_manifest(args.manifest.resolve())
