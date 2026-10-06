@@ -32,8 +32,11 @@ input[type=number]{width:80px}input{accent-color:#71ad88}
 .dimension-options button{max-width:100%;overflow-wrap:anywhere;text-align:left}
 #toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-top:4px;border-top:1px solid #494a4d}
 #viewport{position:relative;flex:1;min-height:80px;overflow:hidden;touch-action:none}
-canvas{position:absolute;inset:0;display:block;cursor:grab;image-rendering:pixelated}
-canvas.dragging{cursor:grabbing}
+#viewport{cursor:grab}
+#viewport.dragging{cursor:grabbing}
+canvas{position:absolute;inset:0;display:block;image-rendering:pixelated}
+#copy-image{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:inherit}
+#copy-image[hidden]{display:none}
 #message{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;padding:12px;background:#202123e8;pointer-events:none;text-align:center}
 footer{padding:8px 16px;color:#b8babf;font-size:12px;line-height:1.8;border-top:1px solid #494a4d}
 #status{color:#ededed}#scale-error{color:#ffab9d}
@@ -50,10 +53,11 @@ footer{padding:8px 16px;color:#b8babf;font-size:12px;line-height:1.8;border-top:
 <label><input id="blink" type="checkbox" disabled>自动闪烁（1 秒）</label>
 <label>缩放 <select id="preset" aria-label="缩放预设"></select></label>
 <label><input id="scale" aria-label="缩放倍率" type="number" step="any" value="1">×</label>
+<label title="关闭后复制当前可见图片，保留缩放和裁切，去掉外围空白"><input id="copy-original" type="checkbox" checked>复制原图</label>
 <span id="scale-error" role="alert"></span>
 </div>
 </header>
-<main id="viewport"><canvas id="canvas" aria-label="图片对比画布"></canvas><p id="message" role="status">正在加载图片…</p></main>
+<main id="viewport"><canvas id="canvas" aria-label="图片对比画布"></canvas><img id="copy-image" alt="" draggable="false" hidden><p id="message" role="status">正在加载图片…</p></main>
 <footer><div id="status"></div><div>左右箭头：沿所选维度切换 · 空格：当前／上一个组合 · 拖动：平移 · Alt＋滚轮：缩放 · nearest-neighbor</div></footer>
 <script id="data" type="application/json">__DATA__</script>
 <script>
@@ -73,9 +77,12 @@ const blink = document.querySelector('#blink');
 const toggle = document.querySelector('#toggle');
 const preset = document.querySelector('#preset');
 const scaleInput = document.querySelector('#scale');
+const copyOriginal = document.querySelector('#copy-original');
+const copyImage = document.querySelector('#copy-image');
 let current = [...data.images[0].values], previous = null;
 let scale = 1, centerX = 0, centerY = 0, initialized = false;
 let shownImage = null, timer = null, generation = 0, drag = null;
+let preparedCopy = false;
 const cache = new Map();
 
 function load(item) {
@@ -93,6 +100,11 @@ function load(item) {
 }
 
 function draw() {
+  preparedCopy = false;
+  // Native "Copy image" targets this real image, not the viewport-sized canvas.
+  copyImage.hidden = !shownImage;
+  if (shownImage && copyImage.getAttribute('src') !== shownImage.src) copyImage.src = shownImage.src;
+  if (!shownImage) copyImage.removeAttribute('src');
   const width = viewport.clientWidth, height = viewport.clientHeight;
   const ratio = window.devicePixelRatio || 1;
   const pixelWidth = Math.max(1, Math.round(width * ratio));
@@ -118,6 +130,45 @@ function draw() {
     width / 2 + (sx - centerX) * scale,
     height / 2 + (sy - centerY) * scale, sw * scale, sh * scale);
 }
+
+function prepareCopy() {
+  if (!shownImage) return false;
+  if (preparedCopy) return true;
+  if (copyOriginal.checked) {
+    if (copyImage.getAttribute('src') !== shownImage.src) copyImage.src = shownImage.src;
+    preparedCopy = true;
+    return true;
+  }
+  const width = viewport.clientWidth, height = viewport.clientHeight;
+  const imageX = width / 2 - centerX * scale;
+  const imageY = height / 2 - centerY * scale;
+  const left = Math.max(0, imageX), top = Math.max(0, imageY);
+  const right = Math.min(width, imageX + shownImage.naturalWidth * scale);
+  const bottom = Math.min(height, imageY + shownImage.naturalHeight * scale);
+  if (right <= left || bottom <= top) return false;
+  const output = document.createElement('canvas');
+  // Export in CSS pixels: display density must not add an extra zoom factor.
+  output.width = Math.max(1, Math.round(right - left));
+  output.height = Math.max(1, Math.round(bottom - top));
+  const outputCtx = output.getContext('2d');
+  outputCtx.imageSmoothingEnabled = false;
+  const sx = Math.max(0, Math.floor((left - imageX) / scale));
+  const sy = Math.max(0, Math.floor((top - imageY) / scale));
+  const sw = Math.min(shownImage.naturalWidth, Math.ceil((right - imageX) / scale)) - sx;
+  const sh = Math.min(shownImage.naturalHeight, Math.ceil((bottom - imageY) / scale)) - sy;
+  // Match the display sampling grid, including fractional pan offsets.
+  outputCtx.scale(output.width / (right - left), output.height / (bottom - top));
+  outputCtx.drawImage(shownImage, sx, sy, sw, sh,
+    imageX + sx * scale - left, imageY + sy * scale - top, sw * scale, sh * scale);
+  copyImage.src = output.toDataURL('image/png');
+  preparedCopy = true;
+  return true;
+}
+copyOriginal.addEventListener('change', draw);
+copyImage.addEventListener('contextmenu', event => {
+  stopBlink();
+  if (!prepareCopy()) event.preventDefault();
+});
 
 function updateStatus() {
   const size = shownImage ? ' · ' + shownImage.naturalWidth + '×' + shownImage.naturalHeight : '';
@@ -237,13 +288,15 @@ viewport.addEventListener('wheel', event => {
   if (Number.isFinite(next) && next > 0) setScale(next);
 }, {passive: false});
 
-canvas.addEventListener('pointerdown', event => {
+viewport.addEventListener('pointerdown', event => {
+  // Prepare before the native context menu resolves its image resource.
+  if (event.button === 2) {stopBlink(); prepareCopy(); return}
   if (event.button !== 0) return;
-  canvas.setPointerCapture(event.pointerId);
+  viewport.setPointerCapture(event.pointerId);
   drag = {id: event.pointerId, x: event.clientX, y: event.clientY};
-  canvas.classList.add('dragging');
+  viewport.classList.add('dragging');
 });
-canvas.addEventListener('pointermove', event => {
+viewport.addEventListener('pointermove', event => {
   if (!drag || drag.id !== event.pointerId) return;
   centerX -= (event.clientX - drag.x) / scale;
   centerY -= (event.clientY - drag.y) / scale;
@@ -251,12 +304,12 @@ canvas.addEventListener('pointermove', event => {
 });
 function endDrag(event) {
   if (!drag || drag.id !== event.pointerId) return;
-  drag = null; canvas.classList.remove('dragging');
-  if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+  drag = null; viewport.classList.remove('dragging');
+  if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
 }
-canvas.addEventListener('pointerup', endDrag);
-canvas.addEventListener('pointercancel', endDrag);
-canvas.addEventListener('lostpointercapture', endDrag);
+viewport.addEventListener('pointerup', endDrag);
+viewport.addEventListener('pointercancel', endDrag);
+viewport.addEventListener('lostpointercapture', endDrag);
 new ResizeObserver(draw).observe(viewport);
 window.addEventListener('resize', draw);
 render();
