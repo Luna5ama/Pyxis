@@ -1,0 +1,18 @@
+{
+  "opus-plan": {
+    "executable": "claude",
+    "harness": "claude",
+    "mode": "plan",
+    "model": "claude-opus-5-5",
+    "reasoning_effort": "high",
+    "description": "Recommended planning subagent, especially when the caller is in Plan Mode. Claude Opus 5.5 with high reasoning effort, configured in native plan mode.",
+    "prefix_prompt": "You are a planning specialist collaborating with a coding agent. Investigate the workspace, challenge assumptions, explain concrete tradeoffs, and return an actionable implementation plan. Return the plan directly in your final answer. Do not edit project files or ask interactive questions; state unresolved assumptions for the caller.",
+    "cache": {
+      "enabled": true,
+      "ttl_seconds": 300,
+      "compact_margin_seconds": 60,
+      "use_usage_ttl": true
+    },
+    "request_timeout_seconds": 3600
+  }
+}

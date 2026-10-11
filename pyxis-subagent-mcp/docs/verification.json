@@ -1,0 +1,228 @@
+{
+  "date": "2026-10-11",
+  "platform": "Windows",
+  "binary_sha256": "02b9574863395288e70cd8acfe214be6fc0c5c3e239d7bc917276723a0e1fa61",
+  "binary_bytes": 1032704,
+  "rust_tests": 5,
+  "integration_tests": 10,
+  "cli_versions": {
+    "claude": "2.1.296",
+    "codex": "0.161.0",
+    "dsh": "0.2.0-rc.2"
+  },
+  "live_tools": [
+    {
+      "tool": "opus-plan",
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "mode": "plan",
+      "reasoning_effort": "high",
+      "compact_completed": true,
+      "session_preserved": true,
+      "marker_preserved": true,
+      "usage": {
+        "first": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 9534,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 9534,
+          "cache_read_input_tokens": 16636,
+          "fallback_credit": null,
+          "inference_geo": "global",
+          "input_tokens": 2,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 9534,
+                "ephemeral_5m_input_tokens": 0
+              },
+              "cache_creation_input_tokens": 9534,
+              "cache_read_input_tokens": 16636,
+              "input_tokens": 2,
+              "output_tokens": 114,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 114,
+          "output_tokens_details": {
+            "thinking_tokens": 110
+          },
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "second": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 143,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 143,
+          "cache_read_input_tokens": 26170,
+          "fallback_credit": null,
+          "inference_geo": "global",
+          "input_tokens": 4,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 143,
+                "ephemeral_5m_input_tokens": 0
+              },
+              "cache_creation_input_tokens": 143,
+              "cache_read_input_tokens": 26170,
+              "input_tokens": 4,
+              "output_tokens": 12,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 12,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "after_compact": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 4872,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 4872,
+          "cache_read_input_tokens": 16636,
+          "fallback_credit": null,
+          "inference_geo": "global",
+          "input_tokens": 2,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 4872,
+                "ephemeral_5m_input_tokens": 0
+              },
+              "cache_creation_input_tokens": 4872,
+              "cache_read_input_tokens": 16636,
+              "input_tokens": 2,
+              "output_tokens": 12,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 12,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        }
+      }
+    },
+    {
+      "tool": "codex-plan",
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "mode": "plan",
+      "reasoning_effort": "low",
+      "compact_completed": true,
+      "session_preserved": true,
+      "marker_preserved": true,
+      "usage": {
+        "first": {
+          "last": {
+            "cacheWriteInputTokens": 0,
+            "cachedInputTokens": 0,
+            "inputTokens": 21739,
+            "outputTokens": 5,
+            "reasoningOutputTokens": 0,
+            "totalTokens": 21744
+          },
+          "modelContextWindow": 258400,
+          "total": {
+            "cacheWriteInputTokens": 0,
+            "cachedInputTokens": 0,
+            "inputTokens": 21739,
+            "outputTokens": 5,
+            "reasoningOutputTokens": 0,
+            "totalTokens": 21744
+          }
+        },
+        "second": {
+          "last": {
+            "cacheWriteInputTokens": 0,
+            "cachedInputTokens": 21504,
+            "inputTokens": 21769,
+            "outputTokens": 12,
+            "reasoningOutputTokens": 0,
+            "totalTokens": 21781
+          },
+          "modelContextWindow": 258400,
+          "total": {
+            "cacheWriteInputTokens": 0,
+            "cachedInputTokens": 21504,
+            "inputTokens": 43508,
+            "outputTokens": 17,
+            "reasoningOutputTokens": 0,
+            "totalTokens": 43525
+          }
+        },
+        "after_compact": {
+          "last": {
+            "cacheWriteInputTokens": 0,
+            "cachedInputTokens": 13696,
+            "inputTokens": 22025,
+            "outputTokens": 12,
+            "reasoningOutputTokens": 0,
+            "totalTokens": 22037
+          },
+          "modelContextWindow": 258400,
+          "total": {
+            "cacheWriteInputTokens": 0,
+            "cachedInputTokens": 35200,
+            "inputTokens": 65533,
+            "outputTokens": 29,
+            "reasoningOutputTokens": 0,
+            "totalTokens": 65562
+          }
+        }
+      }
+    },
+    {
+      "tool": "dsh-plan",
+      "harness": "dsh",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "mode": "plan",
+      "reasoning_effort": null,
+      "compact_completed": true,
+      "session_preserved": true,
+      "marker_preserved": true,
+      "usage": {
+        "first": {
+          "inputTokens": 19955,
+          "outputTokens": 2,
+          "totalTokens": 19957
+        },
+        "second": {
+          "cacheReadTokens": 19840,
+          "inputTokens": 140,
+          "outputTokens": 9,
+          "totalTokens": 19989
+        },
+        "after_compact": {
+          "cacheReadTokens": 19200,
+          "inputTokens": 995,
+          "outputTokens": 50,
+          "totalTokens": 20245
+        }
+      },
+      "provider": "command-1"
+    }
+  ]
+}

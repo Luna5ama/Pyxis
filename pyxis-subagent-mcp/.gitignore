@@ -1,0 +1,4 @@
+/target/
+/.research/
+/config.local.json
+/config.*.local.json

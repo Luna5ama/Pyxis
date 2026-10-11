@@ -1,0 +1,24 @@
+[package]
+name = "pyxis-subagent-mcp"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Low-overhead stdio MCP bridge for coding agent harnesses"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "macros", "process", "io-util", "io-std", "sync", "time", "signal"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

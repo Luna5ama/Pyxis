@@ -1,0 +1,67 @@
+{
+  "opus-plan": {
+    "executable": "claude",
+    "harness": "claude",
+    "mode": "plan",
+    "model": "claude-opus-5-5",
+    "reasoning_effort": "high",
+    "description": "Recommended planning subagent, especially when the caller is in Plan Mode. Claude Opus 5.5 with high reasoning effort, configured in native plan mode.",
+    "prefix_prompt": "Investigate and return an actionable plan directly in your final response. Do not edit files or ask interactive questions.",
+    "cache": {
+      "ttl_seconds": 300,
+      "compact_margin_seconds": 60,
+      "use_usage_ttl": true
+    }
+  },
+  "exec-high": {
+    "executable": "codex",
+    "harness": "codex",
+    "mode": "auto",
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "medium",
+    "description": "Implementation specialist for complex features or modules and long-running implementation tasks. Use when substantial code investigation, integration, or implementation work is needed. Provide clear goals, constraints, file ownership, and acceptance criteria.",
+    "prefix_prompt": "You are an implementation specialist working for a coding agent. Execute the assigned task, preserve unrelated changes, and validate the result with checks appropriate to the change. Return a concise summary of changes, validation, and any blockers. Do not ask interactive questions. Stay within the stated task boundaries.",
+    "cache": {
+      "use_usage_ttl": false,
+      "compact_margin_seconds": 60,
+      "ttl_seconds": 300
+    },
+    "request_timeout_seconds": 14400
+  },
+  "exec-med": {
+    "executable": "codex",
+    "harness": "codex",
+    "mode": "auto",
+    "model": "gpt-6-luna",
+    "reasoning_effort": "max",
+    "description": "Implementation specialist for simple features or modules with clear task boundaries and medium-duration work. Prefer established patterns and a small, well-defined change. Provide explicit scope and acceptance criteria.",
+    "prefix_prompt": "You are an implementation specialist working for a coding agent. Execute the assigned task, preserve unrelated changes, and validate the result with checks appropriate to the change. Return a concise summary of changes, validation, and any blockers. Do not ask interactive questions. Stay within the stated task boundaries.",
+    "cache": {
+      "use_usage_ttl": false,
+      "compact_margin_seconds": 60,
+      "ttl_seconds": 300
+    },
+    "request_timeout_seconds": 7200
+  },
+  "exec-low": {
+    "executable": "dsh",
+    "args": [
+      "--patch",
+      "/replace/with/your/provider-patch.yml"
+    ],
+    "harness": "dsh",
+    "mode": "auto",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "provider": "command-1",
+    "reasoning_effort": "max",
+    "description": "Implementation specialist for very simple, mechanical, short-to-medium-duration tasks with exceptionally clear boundaries. Use only for routine low-risk edits with explicit file ownership and acceptance criteria. Do not delegate systems-level or safety-critical work to this specialist.",
+    "dsh_module_root": "/replace/with/dsh/package-root-containing-node_modules",
+    "cache": {
+      "use_usage_ttl": false,
+      "compact_margin_seconds": 120,
+      "ttl_seconds": 3600
+    },
+    "prefix_prompt": "You are an implementation specialist working for a coding agent. Execute the assigned task, preserve unrelated changes, and validate the result with checks appropriate to the change. Return a concise summary of changes, validation, and any blockers. Do not ask interactive questions. Stay within the stated task boundaries. Accept only very simple, mechanical work with explicit scope. If the task involves systems-level or safety-critical behavior, ambiguous requirements, or work outside this scope, stop and return the blocker to the caller.",
+    "request_timeout_seconds": 3600
+  }
+}
