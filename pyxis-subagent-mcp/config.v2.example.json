@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "runtimes": {
+    "claude": {
+      "executable": "claude",
+      "model": "claude-opus-5-5",
+      "reasoning_effort": "high"
+    },
+    "codex": {
+      "executable": "codex",
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "medium"
+    },
+    "dsh": {
+      "executable": "C:/Users/USER/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd",
+      "args": [
+        "--patch",
+        "C:/Users/USER/.dsh/profiles/desktop/cordis.patch.yml"
+      ],
+      "dsh_module_root": "C:/Users/USER/AppData/Local/Programs/DeepSeek Harness/resources/app.asar/dsh",
+      "provider": "YOUR_DESKTOP_PROVIDER",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "reasoning_effort": "max",
+      "cache": {
+        "ttl_seconds": 3600,
+        "compact_margin_seconds": 120,
+        "use_usage_ttl": false
+      }
+    }
+  },
+  "specialists": {
+    "opus-plan": {
+      "harness": "claude",
+      "mode": "plan",
+      "description": "Planning specialist. Recommended especially when the caller is in Plan Mode.",
+      "prefix_prompt": "Investigate the assigned task and return an actionable plan. Do not edit files or ask interactive questions; state unresolved assumptions."
+    },
+    "exec-low": {
+      "harness": "dsh",
+      "mode": "auto",
+      "description": "Implementation specialist for very simple, mechanical work with explicit scope and acceptance criteria.",
+      "prefix_prompt": "Execute only the assigned simple mechanical task. Preserve unrelated changes, verify the result, and return blockers for ambiguous or systems-level work. Do not ask interactive questions."
+    }
+  },
+  "limits": {
+    "active_tasks": 8,
+    "sessions": 16,
+    "queued_tasks": 128,
+    "idle_seconds": 7200,
+    "retained_tasks": 256,
+    "retained_events": 1024
+  }
+}

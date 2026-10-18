@@ -6,6 +6,8 @@ import queue
 import subprocess
 import sys
 import tempfile
+import shutil
+import uuid
 import threading
 import time
 import unittest
@@ -13,17 +15,34 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 BINARY = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 else ROOT / 'target/debug' / ('pyxis-subagent-mcp.exe' if os.name == 'nt' else 'pyxis-subagent-mcp')
 
+class Fixture:
+    """Workspace fixture with inherited ACLs, including native sandbox children."""
+    def __init__(self):
+        base = ROOT / 'target' / 'test-fixtures'
+        base.mkdir(parents=True, exist_ok=True)
+        path = base / str(uuid.uuid4())
+        os.mkdir(path, 0o777)
+        self.name = str(path)
+
+    def cleanup(self):
+        path = Path(self.name).resolve()
+        assert path.parent == (ROOT / 'target' / 'test-fixtures').resolve()
+        shutil.rmtree(path)
+
 class Client:
-    def __init__(self, cache=None, kinds=('claude',), request_timeout=3600, **env):
-        self.temp = tempfile.TemporaryDirectory(prefix='pyxis-test-')
+    def __init__(self, cache=None, kinds=('claude',), request_timeout=3600, dynamic=False, limits=None, legacy=False, **env):
+        self.temp = Fixture()
         self.log = Path(self.temp.name) / 'events.jsonl'
         config = {}
         for kind in kinds:
-            config[kind] = dict(executable=sys.executable, args=[str(ROOT/'tests/fake_harness.py'), kind], harness=kind, mode='plan', model='test-model', reasoning_effort='high', description=f'{kind} specialist', prefix_prompt='stable prefix', provider='test-provider', dsh_module_root=str(ROOT), cache=cache or dict(enabled=False),request_timeout_seconds=request_timeout)
+            config[kind] = dict(executable=sys.executable, args=[str(ROOT/'tests'/('fake_dynamic.py' if dynamic else 'fake_harness.py')), kind], harness=kind, mode='auto' if dynamic else 'plan', model='test-model', reasoning_effort='high', description=f'{kind} specialist', prefix_prompt='stable prefix', provider='test-provider', dsh_module_root=str(ROOT), cache=cache or dict(enabled=False),request_timeout_seconds=request_timeout)
+        if dynamic:
+            config = dict(version=2, runtimes=config, specialists={'legacy':config['claude']} if legacy else {}, limits=limits or {})
         path = Path(self.temp.name)/'config.json'
         path.write_text(json.dumps(config), encoding='utf-8')
         self.p = subprocess.Popen([str(BINARY), str(path)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', env={**os.environ, 'PYXIS_TEST_LOG':str(self.log), **env})
         self.messages, self.logs = queue.Queue(), []
+        self.pending_responses = {}
         self.reader = threading.Thread(target=lambda: [self.messages.put(json.loads(line)) for line in self.p.stdout], daemon=True)
         self.reader.start()
         self.errors = threading.Thread(target=lambda: self.logs.extend(self.p.stderr.readlines()), daemon=True)
@@ -41,10 +60,12 @@ class Client:
         self.send(id, 'tools/call', {'name':kind,'arguments':{'prompt':prompt}})
 
     def get(self, id, seconds=8):
+        if id in self.pending_responses: return self.pending_responses.pop(id)
         deadline = time.monotonic()+seconds
         while time.monotonic()<deadline:
             message = self.messages.get(timeout=max(.01, deadline-time.monotonic()))
             if message.get('id') == id: return message
+            if 'id' in message: self.pending_responses[message['id']] = message
         raise TimeoutError(id)
 
     def events(self):
@@ -59,6 +80,8 @@ class Client:
         raise AssertionError(self.events())
 
     def close(self):
+        if getattr(self, 'closed', False): return
+        self.closed = True
         self.p.stdin.close()
         self.p.wait(timeout=8)
         self.reader.join(timeout=2); self.errors.join(timeout=2)

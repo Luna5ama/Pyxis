@@ -1,5 +1,7 @@
+mod agent;
 mod config;
 mod harness;
+mod interaction;
 mod session;
 mod transport;
 
@@ -33,11 +35,42 @@ fn success(id: Value, result: Value) -> Value {
     json!({"jsonrpc":"2.0","id":id,"result":result})
 }
 
-fn tool_list(sessions: &BTreeMap<String, Arc<session::Session>>) -> Value {
-    json!({"tools":sessions.iter().map(|(name,session)| json!({
+fn managed_reply(id: Value, result: Result<Value>) -> Value {
+    match result {
+        Ok(value) => {
+            let encoded = value.to_string();
+            if encoded.len() >= transport::MAX_FRAME / 2 {
+                return success(
+                    id,
+                    json!({"content":[{"type":"text","text":"Result exceeds the response budget; query individual tasks and page their events."}],"isError":true}),
+                );
+            }
+            let text = if encoded.len() < 512 * 1024 {
+                encoded
+            } else {
+                "Structured result attached. Query individual tasks to page their events.".into()
+            };
+            success(
+                id,
+                json!({"content":[{"type":"text","text":text}],"structuredContent":value,"isError":false}),
+            )
+        }
+        Err(error) => success(
+            id,
+            json!({"content":[{"type":"text","text":format!("{error:#}")}],"isError":true}),
+        ),
+    }
+}
+
+fn tool_list(sessions: &BTreeMap<String, Arc<session::Session>>, dynamic: bool) -> Value {
+    let mut tools = sessions.iter().map(|(name,session)| json!({
         "name":name,"description":session.config.description,
         "inputSchema":{"type":"object","properties":{"prompt":{"type":"string","minLength":1,"description":"Task or follow-up for this specialist. The server manages its session."}},"required":["prompt"],"additionalProperties":false}
-    })).collect::<Vec<_>>()})
+    })).collect::<Vec<_>>();
+    if dynamic {
+        tools.extend(agent::definitions());
+    }
+    json!({"tools":tools})
 }
 
 async fn execute(
@@ -79,10 +112,21 @@ async fn execute(
     }
 }
 
-async fn serve(config: config::Config) -> Result<()> {
+async fn serve(config: config::LoadedConfig) -> Result<()> {
+    let nested = std::env::var_os("PYXIS_SUBAGENT_NESTED").is_some();
+    let dynamic = !nested && !config.runtimes.is_empty();
+    let resources = session::Resources::new(&config.limits);
+    let manager = agent::Manager::new(config.runtimes, config.limits, resources.clone());
+    let reaper = manager.spawn_reaper();
     let sessions: BTreeMap<_, _> = config
+        .specialists
         .into_iter()
-        .map(|(name, config)| (name.clone(), session::Session::new(name, config)))
+        .map(|(name, config)| {
+            (
+                name.clone(),
+                session::Session::new(name, config, resources.clone()),
+            )
+        })
         .collect();
     let (shutdown, shutdown_rx) = watch::channel(false);
     let timers: Vec<_> = sessions
@@ -177,10 +221,18 @@ async fn serve(config: config::Config) -> Result<()> {
                         "initialize" => error(id,-32600,"Already initialized"),
                         "tools/list" => {
                             if params.get("cursor").is_some() { error(id,-32602,"No pagination cursor is supported") }
-                            else { success(id,tool_list(&sessions)) }
+                            else { success(id,if nested {json!({"tools":[]})} else {tool_list(&sessions,dynamic)}) }
                         }
                         "tools/call" => {
+                            if nested { output.send(error(id,-32602,"Execution tools are disabled in nested Pyxis processes")).await?;continue; }
+                            if running.len() >= 128 { output.send(error(id,-32000,"Too many in-flight tool calls (limit 128)")).await?;continue; }
                             let name = params["name"].as_str().unwrap_or("");
+                            if dynamic && name.starts_with("agent_") {
+                                let manager = manager.clone(); let task_key=key.clone(); let args=params["arguments"].clone(); let tool_name=name.to_owned();
+                                let handle=calls.spawn(async move {
+                                    let response=managed_reply(id,manager.call(&tool_name,args).await);(task_key,response)
+                                });running.insert(key,handle);continue;
+                            }
                             let arguments = serde_json::from_value::<Arguments>(params["arguments"].clone());
                             match (sessions.get(name), arguments) {
                                 (None, _) => error(id,-32602,"Unknown specialist tool"),
@@ -223,6 +275,9 @@ async fn serve(config: config::Config) -> Result<()> {
     for session in sessions.values() {
         session.close().await;
     }
+    manager.close_all().await;
+    reaper.abort();
+    let _ = reaper.await;
     drop(output);
     if !writer_finished {
         writer.await??;

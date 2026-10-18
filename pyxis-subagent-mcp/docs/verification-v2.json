@@ -1,0 +1,681 @@
+{
+  "date": "2026-10-15",
+  "version": "0.2.0",
+  "platform": "Windows",
+  "priority": "Idle",
+  "cli_versions": {
+    "claude": "2.1.296",
+    "codex": "0.161.0",
+    "dsh": "0.2.0-rc.2"
+  },
+  "installed": {
+    "candidate": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\target\\deploy\\pyxis-subagent-mcp-0.2.0-c5a00b8b16d38341.exe",
+    "candidate_sha256": "c5a00b8b16d38341ec985b19ba48ee0c5754171e5f899c520f27e18dbb75a1ae",
+    "runtime_config": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\config.v2.local.json",
+    "runtime_config_sha256": "16309485ea48c932fa1ae99231b680c807807a49ce0ace1888f4e3e50b99653a",
+    "codex_config": "J:\\.codex\\config.toml",
+    "installed_config_sha256": "e6421a3bcf03a425a38a7f91a046d42ada941f236c13fe251d47d0be9cc4d198",
+    "previous_binary": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\target\\deploy\\pyxis-subagent-mcp-0.2.0-8131b422204ed741.exe",
+    "previous_binary_sha256": "8131b422204ed7412ac33db6ac0fddbb6c74de24c8e51096359f4b5672900b3a",
+    "skill_destination": "J:\\.codex\\skills\\pyxis-subagent\\SKILL.md",
+    "installed_skill_sha256": "ecac7ebb274e750bb7b676f98a78c69f9d85f859bd722dcd82ea5d38897b2389",
+    "tools": [
+      "opus-plan",
+      "exec-low",
+      "agent_models",
+      "agent_start",
+      "agent_send",
+      "agent_list",
+      "agent_status",
+      "agent_wait",
+      "agent_respond",
+      "agent_cancel",
+      "agent_close",
+      "agent_compact"
+    ]
+  },
+  "rollback_manifest": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\.research\\deploy\\bd0526db7ce24b16bc070678b827e9e1\\manifest.json",
+  "checks": {
+    "rust_unit_tests": 10,
+    "legacy_integration_tests": 10,
+    "dynamic_integration_tests": 20,
+    "format": "passed",
+    "clippy": "passed; environment emitted incremental hard-link fallback warnings",
+    "bridge_services": "passed",
+    "deployment_roundtrip": "passed",
+    "companion_skill": "passed source and installed"
+  },
+  "native_reports": {
+    "claude_core": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\53db17fc-eba1-49f3-a14e-d7d7b33e7cff\\report.json",
+      "report_sha256": "de33e2dc2957ff43f34910b0b8943efb7526a9e362c52a0d69dd3164a2e923e8",
+      "binary_sha256": "8131b422204ed7412ac33db6ac0fddbb6c74de24c8e51096359f4b5672900b3a",
+      "error": null,
+      "harnesses": {
+        "claude": {
+          "smoke": "passed",
+          "concurrency_and_context": "passed",
+          "questions": "passed",
+          "steer_cancel_and_resume": {
+            "status": "passed",
+            "child_pid": 55188
+          },
+          "task_states": [
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed"
+          ],
+          "interaction_methods": [
+            "can_use_tool"
+          ],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\53db17fc-eba1-49f3-a14e-d7d7b33e7cff\\claude\\smoke",
+            "effort": "high",
+            "harness": "claude",
+            "mode": "auto",
+            "model": "claude-opus-5-5",
+            "native": {
+              "mcp_servers": [
+                {
+                  "name": "vibris",
+                  "source": "user",
+                  "status": "connected"
+                },
+                {
+                  "name": "nsight-gpu-trace",
+                  "source": "user",
+                  "status": "connected"
+                },
+                {
+                  "name": "claude.ai Claude Docs",
+                  "source": "claudeai",
+                  "status": "connected"
+                }
+              ],
+              "model": "claude-opus-5-5",
+              "permissionMode": "auto",
+              "version": "2.1.296"
+            },
+            "provider": null
+          }
+        }
+      }
+    },
+    "claude_approvals": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\e0e7e8ce-6d66-4e53-b6e3-be765da16ec5\\report.json",
+      "report_sha256": "d90d227f936ad1bc14d51baa532adaf1a886cb5bd189318805f79cf0ac74765a",
+      "binary_sha256": "755e0d2eb4c9ecdb3790beb2dbfdf7cf5cc52b48de47c55445d68bff9dd4f073",
+      "error": null,
+      "harnesses": {
+        "claude": {
+          "approval_allow": "passed",
+          "approval_deny": "passed",
+          "task_states": [
+            "completed",
+            "completed"
+          ],
+          "interaction_methods": [
+            "can_use_tool",
+            "can_use_tool"
+          ],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\e0e7e8ce-6d66-4e53-b6e3-be765da16ec5\\claude\\approval-True",
+            "effort": "high",
+            "harness": "claude",
+            "mode": "auto",
+            "model": "claude-opus-5-5",
+            "native": {
+              "mcp_servers": [
+                {
+                  "name": "vibris",
+                  "source": "user",
+                  "status": "connected"
+                },
+                {
+                  "name": "nsight-gpu-trace",
+                  "source": "user",
+                  "status": "connected"
+                },
+                {
+                  "name": "claude.ai Claude Docs",
+                  "source": "claudeai",
+                  "status": "pending"
+                }
+              ],
+              "model": "claude-opus-5-5",
+              "permissionMode": "auto",
+              "version": "2.1.296"
+            },
+            "provider": null
+          }
+        }
+      }
+    },
+    "codex_core": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\dc2aa32e-0018-4f20-8dcf-f008103da2b3\\report.json",
+      "report_sha256": "a29e11801d2c55d33f7a6fc7360a005f9c1e62e5cc17b96eaf456b17edf1d987",
+      "binary_sha256": "8131b422204ed7412ac33db6ac0fddbb6c74de24c8e51096359f4b5672900b3a",
+      "error": null,
+      "harnesses": {
+        "codex": {
+          "smoke": "passed",
+          "concurrency_and_context": "passed",
+          "questions": "passed",
+          "steer_cancel_and_resume": {
+            "status": "passed",
+            "child_pid": 60084
+          },
+          "task_states": [
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed"
+          ],
+          "interaction_methods": [
+            "item/commandExecution/requestApproval",
+            "item/commandExecution/requestApproval",
+            "item/commandExecution/requestApproval",
+            "item/commandExecution/requestApproval",
+            "item/commandExecution/requestApproval",
+            "item/fileChange/requestApproval",
+            "item/fileChange/requestApproval",
+            "item/tool/requestUserInput",
+            "item/commandExecution/requestApproval",
+            "item/fileChange/requestApproval",
+            "item/commandExecution/requestApproval",
+            "item/fileChange/requestApproval"
+          ],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\dc2aa32e-0018-4f20-8dcf-f008103da2b3\\codex\\smoke",
+            "effort": "medium",
+            "harness": "codex",
+            "mode": "auto",
+            "model": "gpt-6.1-sol",
+            "native": {
+              "activePermissionProfile": null,
+              "approvalPolicy": "on-request",
+              "approvalsReviewer": "user",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\dc2aa32e-0018-4f20-8dcf-f008103da2b3\\codex\\smoke",
+              "disabledPluginIds": [],
+              "instructionSources": [
+                "C:\\Users\\Luna5ama\\.codex\\AGENTS.md"
+              ],
+              "model": "gpt-6.1-sol",
+              "modelProvider": "openai",
+              "multiAgentMode": "explicitRequestOnly",
+              "reasoningEffort": "medium",
+              "runtimeWorkspaceRoots": [
+                "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\dc2aa32e-0018-4f20-8dcf-f008103da2b3\\codex\\smoke"
+              ],
+              "sandbox": {
+                "excludeSlashTmp": false,
+                "excludeTmpdirEnvVar": false,
+                "networkAccess": false,
+                "type": "workspaceWrite",
+                "writableRoots": []
+              },
+              "serviceTier": "default"
+            },
+            "provider": null
+          }
+        }
+      }
+    },
+    "codex_approvals": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\bfd69282-4398-4a9a-9246-d04e7b6c8e82\\report.json",
+      "report_sha256": "d76c2e57774589394baf2ca38b7198ab58d71ad727a489fb082dc17d00588f64",
+      "binary_sha256": "4515ecb05541ec80368550cb5213ee7bd50218f797f18381f6454805eed0fbcf",
+      "error": null,
+      "harnesses": {
+        "codex": {
+          "approval_allow": "passed",
+          "approval_deny": "passed",
+          "task_states": [
+            "completed",
+            "cancelled"
+          ],
+          "interaction_methods": [
+            "item/commandExecution/requestApproval",
+            "item/commandExecution/requestApproval"
+          ],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\bfd69282-4398-4a9a-9246-d04e7b6c8e82\\codex\\approval-True",
+            "effort": "medium",
+            "harness": "codex",
+            "mode": "auto",
+            "model": "gpt-6.1-sol",
+            "native": {
+              "activePermissionProfile": null,
+              "approvalPolicy": "on-request",
+              "approvalsReviewer": "user",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\bfd69282-4398-4a9a-9246-d04e7b6c8e82\\codex\\approval-True",
+              "disabledPluginIds": [],
+              "instructionSources": [
+                "C:\\Users\\Luna5ama\\.codex\\AGENTS.md"
+              ],
+              "model": "gpt-6.1-sol",
+              "modelProvider": "openai",
+              "multiAgentMode": "explicitRequestOnly",
+              "reasoningEffort": "medium",
+              "runtimeWorkspaceRoots": [
+                "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\bfd69282-4398-4a9a-9246-d04e7b6c8e82\\codex\\approval-True"
+              ],
+              "sandbox": {
+                "excludeSlashTmp": false,
+                "excludeTmpdirEnvVar": false,
+                "networkAccess": false,
+                "type": "workspaceWrite",
+                "writableRoots": []
+              },
+              "serviceTier": "default"
+            },
+            "provider": null
+          }
+        }
+      }
+    },
+    "dsh_cycle_and_failed_concurrency_retest": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\341e4d54-e0ba-4e94-9b08-d9ded71385d9\\report.json",
+      "report_sha256": "fbb64d63c402086514d1546b94fb74a998fea3cf0cedb179d5f74d6ac9062957",
+      "binary_sha256": "8131b422204ed7412ac33db6ac0fddbb6c74de24c8e51096359f4b5672900b3a",
+      "error": "Task task-15876-9 failed: stderr=LlmError: command-1 API error (400): {\"message\":\"{\\\"type\\\":\\\"invalid_request_error\\\",\\\"code\\\":\\\"\\\",\\\"message\\\":\\\"invalid request error trace_id: 2a85576d2cd839fbdc8ce78755e7e926\\\"}\\n\",\"type\":\"invalid_request_error\"}\n    at ReactLoopAgent.step (file:///C:/Users/Luna5ama/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js:1133:42)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ReactLoopAgent.turn (file:///C:/Users/Luna5ama/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js:978:22)\n    at async ReactLoopAgent.kick (file:///C:/Users/Luna5ama/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js:889:11)\n: harness RPC failed: {\"code\":-32603,\"message\":\"command-1 API error (400): {\\\"message\\\":\\\"{\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"code\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"invalid request error trace_id: 2a85576d2cd839fbdc8ce78755e7e926\\\\\\\"}\\\\n\\\",\\\"type\\\":\\\"invalid_request_error\\\"}\"}",
+      "harnesses": {
+        "dsh": {
+          "native_commands_compaction_followup": "passed",
+          "task_states": [
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "completed",
+            "failed"
+          ],
+          "interaction_methods": [],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\341e4d54-e0ba-4e94-9b08-d9ded71385d9\\dsh\\native-cycle",
+            "effort": "max",
+            "harness": "dsh",
+            "mode": "auto",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "native": {
+              "approvalPolicy": "ask",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\341e4d54-e0ba-4e94-9b08-d9ded71385d9\\dsh\\native-cycle",
+              "mode": "auto",
+              "model": "deepseek/deepseek-v4.1-flash",
+              "planModeIsSoftGuidance": true,
+              "provider": "command-1",
+              "reasoningEffort": "max",
+              "sandbox": {
+                "mode": "danger-full-access",
+                "sessionId": "pyxis-22154a51-bcee-4f3d-95cf-d712c2214c65",
+                "workspaceRoot": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\341e4d54-e0ba-4e94-9b08-d9ded71385d9\\dsh\\native-cycle"
+              }
+            },
+            "provider": "command-1"
+          }
+        }
+      }
+    },
+    "dsh_concurrency_success": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\4451ac0e-8c13-421c-bd18-78737ef1da5a\\report.json",
+      "report_sha256": "bd4d17fc6206f8720edc87130db81975d22447603d848b38ad958337b8881d0a",
+      "binary_sha256": "4515ecb05541ec80368550cb5213ee7bd50218f797f18381f6454805eed0fbcf",
+      "error": null,
+      "harnesses": {
+        "dsh": {
+          "concurrency_and_context": "passed",
+          "task_states": [
+            "completed",
+            "completed",
+            "completed",
+            "completed"
+          ],
+          "interaction_methods": [],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\4451ac0e-8c13-421c-bd18-78737ef1da5a\\dsh\\concurrent-0",
+            "effort": "max",
+            "harness": "dsh",
+            "mode": "auto",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "native": {
+              "approvalPolicy": "ask",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\4451ac0e-8c13-421c-bd18-78737ef1da5a\\dsh\\concurrent-0",
+              "mode": "auto",
+              "model": "deepseek/deepseek-v4.1-flash",
+              "planModeIsSoftGuidance": true,
+              "provider": "command-1",
+              "reasoningEffort": "max"
+            },
+            "provider": "command-1"
+          }
+        }
+      }
+    },
+    "dsh_questions": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\bb470de1-d217-4021-84d7-5d7445938e7b\\report.json",
+      "report_sha256": "f3e9d74c2010b874466598fd8f3d11f374f7b961d72a2e632e0c15842f355c18",
+      "binary_sha256": "4515ecb05541ec80368550cb5213ee7bd50218f797f18381f6454805eed0fbcf",
+      "error": null,
+      "harnesses": {
+        "dsh": {
+          "questions": "passed",
+          "task_states": [
+            "completed"
+          ],
+          "interaction_methods": [
+            "pyxis/interaction/questions"
+          ],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\bb470de1-d217-4021-84d7-5d7445938e7b\\dsh\\questions",
+            "effort": "max",
+            "harness": "dsh",
+            "mode": "plan",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "native": {
+              "approvalPolicy": "ask",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\bb470de1-d217-4021-84d7-5d7445938e7b\\dsh\\questions",
+              "mode": "plan",
+              "model": "deepseek/deepseek-v4.1-flash",
+              "planModeIsSoftGuidance": true,
+              "provider": "command-1",
+              "reasoningEffort": "max"
+            },
+            "provider": "command-1"
+          }
+        }
+      }
+    },
+    "dsh_controls": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\8362c113-f828-411f-8d38-a6899412f870\\report.json",
+      "report_sha256": "b4bae9271e0e6c3b9f3e7ab22d57e9d3bab0980116fa37cb197eccb41e4c8e6c",
+      "binary_sha256": "4515ecb05541ec80368550cb5213ee7bd50218f797f18381f6454805eed0fbcf",
+      "error": null,
+      "harnesses": {
+        "dsh": {
+          "steer_cancel_and_resume": {
+            "status": "passed",
+            "child_pid": 58208
+          },
+          "task_states": [
+            "completed",
+            "completed"
+          ],
+          "interaction_methods": [],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\8362c113-f828-411f-8d38-a6899412f870\\dsh\\controls",
+            "effort": "max",
+            "harness": "dsh",
+            "mode": "auto",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "native": {
+              "approvalPolicy": "ask",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\8362c113-f828-411f-8d38-a6899412f870\\dsh\\controls",
+              "mode": "auto",
+              "model": "deepseek/deepseek-v4.1-flash",
+              "planModeIsSoftGuidance": true,
+              "provider": "command-1",
+              "reasoningEffort": "max"
+            },
+            "provider": "command-1"
+          }
+        }
+      }
+    },
+    "dsh_approvals": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\d471097d-efa5-4edb-aa08-38d870a92dc9\\report.json",
+      "report_sha256": "3006f74bb96c580529714cbd0b83c05aee1bba5e189e86feb79b5393a5aca428",
+      "binary_sha256": "8131b422204ed7412ac33db6ac0fddbb6c74de24c8e51096359f4b5672900b3a",
+      "error": null,
+      "harnesses": {
+        "dsh": {
+          "approval_allow": "passed",
+          "approval_deny": "passed",
+          "task_states": [
+            "completed",
+            "completed"
+          ],
+          "interaction_methods": [
+            "pyxis/interaction/approval",
+            "pyxis/interaction/approval"
+          ],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\d471097d-efa5-4edb-aa08-38d870a92dc9\\dsh\\approval-True",
+            "effort": "max",
+            "harness": "dsh",
+            "mode": "auto",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "native": {
+              "approvalPolicy": "ask",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\d471097d-efa5-4edb-aa08-38d870a92dc9\\dsh\\approval-True",
+              "mode": "auto",
+              "model": "deepseek/deepseek-v4.1-flash",
+              "planModeIsSoftGuidance": true,
+              "provider": "command-1",
+              "reasoningEffort": "max",
+              "sandbox": {
+                "mode": "read-only",
+                "sessionId": "pyxis-00973b4b-1a95-48f7-8c04-fcb49341296c",
+                "workspaceRoot": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\d471097d-efa5-4edb-aa08-38d870a92dc9\\dsh\\approval-True"
+              }
+            },
+            "provider": "command-1"
+          }
+        }
+      }
+    },
+    "installed_new_connection": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\report.json",
+      "report_sha256": "a8cacda296f7c4359c2db57b57ff5e8d3854939521249799da3ef2d170946f27",
+      "binary_sha256": "8131b422204ed7412ac33db6ac0fddbb6c74de24c8e51096359f4b5672900b3a",
+      "error": null,
+      "harnesses": {
+        "claude": {
+          "probe": "passed",
+          "task_states": [
+            "completed"
+          ],
+          "interaction_methods": [],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\claude\\probe",
+            "effort": "high",
+            "harness": "claude",
+            "mode": "auto",
+            "model": "claude-opus-5-5",
+            "native": {
+              "mcp_servers": [
+                {
+                  "name": "vibris",
+                  "source": "user",
+                  "status": "connected"
+                },
+                {
+                  "name": "nsight-gpu-trace",
+                  "source": "user",
+                  "status": "connected"
+                },
+                {
+                  "name": "claude.ai Claude Docs",
+                  "source": "claudeai",
+                  "status": "pending"
+                }
+              ],
+              "model": "claude-opus-5-5",
+              "permissionMode": "auto",
+              "version": "2.1.296"
+            },
+            "provider": null
+          }
+        },
+        "codex": {
+          "probe": "passed",
+          "task_states": [
+            "completed"
+          ],
+          "interaction_methods": [],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\codex\\probe",
+            "effort": "medium",
+            "harness": "codex",
+            "mode": "auto",
+            "model": "gpt-6.1-sol",
+            "native": {
+              "activePermissionProfile": null,
+              "approvalPolicy": "on-request",
+              "approvalsReviewer": "auto_review",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\codex\\probe",
+              "disabledPluginIds": [],
+              "instructionSources": [
+                "C:\\Users\\Luna5ama\\.codex\\AGENTS.md"
+              ],
+              "model": "gpt-6.1-sol",
+              "modelProvider": "openai",
+              "multiAgentMode": "explicitRequestOnly",
+              "reasoningEffort": "medium",
+              "runtimeWorkspaceRoots": [
+                "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\codex\\probe"
+              ],
+              "sandbox": {
+                "excludeSlashTmp": false,
+                "excludeTmpdirEnvVar": false,
+                "networkAccess": false,
+                "type": "workspaceWrite",
+                "writableRoots": []
+              },
+              "serviceTier": "default"
+            },
+            "provider": null
+          }
+        },
+        "dsh": {
+          "probe": "passed",
+          "task_states": [
+            "completed"
+          ],
+          "interaction_methods": [],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\dsh\\probe",
+            "effort": "max",
+            "harness": "dsh",
+            "mode": "auto",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "native": {
+              "approvalPolicy": "ask",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\dsh\\probe",
+              "mode": "auto",
+              "model": "deepseek/deepseek-v4.1-flash",
+              "planModeIsSoftGuidance": true,
+              "provider": "command-1",
+              "reasoningEffort": "max",
+              "sandbox": {
+                "mode": "danger-full-access",
+                "sessionId": "pyxis-26d0f796-e9f1-46d4-9154-af02da0c4912",
+                "workspaceRoot": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\39e544dd-74fa-4de9-b277-5390a993e8e3\\dsh\\probe"
+              }
+            },
+            "provider": "command-1"
+          }
+        }
+      }
+    },
+    "dsh_read_first_failure": {
+      "path": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\aff98f8b-1a62-4054-a88c-ea104e14d838\\report.json",
+      "report_sha256": "26c67c1938d98e85c07da95e6e0245fb84d4ddb487c393d12cd4e45d3458f37d",
+      "binary_sha256": "755e0d2eb4c9ecdb3790beb2dbfdf7cf5cc52b48de47c55445d68bff9dd4f073",
+      "error": "Task task-39572-2 failed: stderr=LlmError: command-1 API error (400): {\"message\":\"{\\\"type\\\":\\\"invalid_request_error\\\",\\\"code\\\":\\\"\\\",\\\"message\\\":\\\"invalid request error trace_id: 250ee66ff93a1696a7496d7afadde397\\\"}\\n\",\"type\":\"invalid_request_error\"}\n    at ReactLoopAgent.step (file:///C:/Users/Luna5ama/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js:1133:42)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ReactLoopAgent.turn (file:///C:/Users/Luna5ama/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js:978:22)\n    at async ReactLoopAgent.kick (file:///C:/Users/Luna5ama/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js:889:11)\n: harness RPC failed: {\"code\":-32603,\"message\":\"command-1 API error (400): {\\\"message\\\":\\\"{\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"code\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"invalid request error trace_id: 250ee66ff93a1696a7496d7afadde397\\\\\\\"}\\\\n\\\",\\\"type\\\":\\\"invalid_request_error\\\"}\"}",
+      "harnesses": {
+        "dsh": {
+          "task_states": [
+            "failed"
+          ],
+          "interaction_methods": [],
+          "effective_config": {
+            "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\aff98f8b-1a62-4054-a88c-ea104e14d838\\dsh\\smoke",
+            "effort": "max",
+            "harness": "dsh",
+            "mode": "auto",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "native": {
+              "approvalPolicy": "ask",
+              "cwd": "J:\\.codex\\visualizations\\2026\\10\\15\\01a13e88-e43f-7030-bcff-5351e45e935f\\pyxis-acceptance\\aff98f8b-1a62-4054-a88c-ea104e14d838\\dsh\\smoke",
+              "mode": "auto",
+              "model": "deepseek/deepseek-v4.1-flash",
+              "planModeIsSoftGuidance": true,
+              "provider": "command-1",
+              "reasoningEffort": "max"
+            },
+            "provider": "command-1"
+          }
+        }
+      }
+    }
+  },
+  "known_limitations": [
+    "DSH command-1 intermittently returns HTTP 400 invalid_request_error after tool results. Reproduced with unmodified installed native SDK, max, smoke test, trace_id ea4ad274e45f7cf18d95e8dbe4fb628c. Native SDK max PONG and create/read tests succeeded.",
+    "Codex inherited Windows sandbox helper reports setup refresh had errors for some commands. Synthetic acceptance explicitly requested approval for the exact same commands and used a test-only approvals_reviewer=user; installed runtime inherits native policy.",
+    "The active Codex chat still has the old MCP tool catalog. New direct MCP connection discovers all 12 tools and executes three native default-model PONG tasks. Reconnect MCP or open a new chat to refresh the app catalog."
+  ],
+  "dsh_approval_test_policy": "Process-only overlay narrows all three native permission presets to read-only + ask; Desktop configuration and standing permissions are unchanged.",
+  "initial_installation": {
+    "candidate": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\target\\deploy\\pyxis-subagent-mcp-0.2.0-8131b422204ed741.exe",
+    "candidate_sha256": "8131b422204ed7412ac33db6ac0fddbb6c74de24c8e51096359f4b5672900b3a",
+    "runtime_config": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\config.v2.local.json",
+    "runtime_config_sha256": "16309485ea48c932fa1ae99231b680c807807a49ce0ace1888f4e3e50b99653a",
+    "codex_config": "J:\\.codex\\config.toml",
+    "installed_config_sha256": "eed9bb27528e6d32cdb48139220f68cb0173eea9acb19f63aaebbeb2acd2a8d0",
+    "previous_binary": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\target\\release\\pyxis-subagent-mcp.exe",
+    "previous_binary_sha256": "02b9574863395288e70cd8acfe214be6fc0c5c3e239d7bc917276723a0e1fa61",
+    "skill_destination": "J:\\.codex\\skills\\pyxis-subagent\\SKILL.md",
+    "installed_skill_sha256": "ecac7ebb274e750bb7b676f98a78c69f9d85f859bd722dcd82ea5d38897b2389",
+    "tools": [
+      "opus-plan",
+      "exec-low",
+      "agent_models",
+      "agent_start",
+      "agent_send",
+      "agent_list",
+      "agent_status",
+      "agent_wait",
+      "agent_respond",
+      "agent_cancel",
+      "agent_close",
+      "agent_compact"
+    ]
+  },
+  "initial_rollback_manifest": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\.research\\deploy\\d1c37ea2022546418eaa51497e048075\\manifest.json",
+  "dsh_400_retry_update": {
+    "binary_sha256": "c5a00b8b16d38341ec985b19ba48ee0c5754171e5f899c520f27e18dbb75a1ae",
+    "native_policy": "append INVALID_REQUEST to owned normal retry policies, preserving all native limits/backoff and disable settings",
+    "evidence": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\target\\retry-acceptance\\1d8a9fea-43c1-49d0-9af8-d362267c6d72\\report.json",
+    "evidence_sha256": "f5046926879028a3998b8e2b830f4f0f0310c45acd5721ca703044680090c777",
+    "observed_retries": 5,
+    "same_native_turn_and_step": true,
+    "already_completed_read_tool_invocations": 1,
+    "exhaustion": "native 400 remains visible",
+    "checks": [
+      "format",
+      "clippy",
+      "bridge service policy preservation tests",
+      "deployment roundtrip",
+      "real native retry exhaustion"
+    ],
+    "post_install_probe": {
+      "path": "I:\\code\\Pyxis\\pyxis-subagent-mcp\\target\\retry-acceptance\\7ecc1b41aed14b8aae87ebc5ab2cbf92\\retry-cancel.json",
+      "status": "passed",
+      "tools": 12,
+      "cancel_during_retry": "not exercised: this synthetic request completed without a retry"
+    }
+  }
+}
