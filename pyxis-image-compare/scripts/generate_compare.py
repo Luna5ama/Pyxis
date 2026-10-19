@@ -5,6 +5,12 @@ import argparse
 import base64
 import html
 import json
+import io
+import os
+import shutil
+import struct
+import subprocess
+import tempfile
 from pathlib import Path
 import sys
 
@@ -319,7 +325,99 @@ render();
 '''
 
 
-def read_manifest(path):
+def source_encoding(raw):
+    """Inspect the actual container/codec, never infer WebP mode from its suffix."""
+    if raw.startswith(b"\x89PNG\r\n\x1a\n"):
+        if len(raw) < 33 or raw[12:16] != b"IHDR":
+            raise ValueError("Invalid PNG header")
+        if raw[24] > 8:
+            raise ValueError("Lossless AVIF conversion currently requires PNG depth <= 8; refusing to reduce bit depth")
+        return "PNG", True
+    if raw.startswith(b"\xff\xd8\xff"):
+        return "JPEG", False
+    if raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
+        end = struct.unpack_from("<I", raw, 4)[0] + 8
+        if end != len(raw):
+            raise ValueError("Invalid WebP RIFF size")
+        offset = 12
+        payload_mode = None
+        while offset + 8 <= end:
+            tag = raw[offset:offset + 4]
+            size = struct.unpack_from("<I", raw, offset + 4)[0]
+            if offset + 8 + size > end:
+                raise ValueError("Truncated WebP chunk")
+            if tag in (b"ANIM", b"ANMF"):
+                raise ValueError("Animated images are not supported")
+            if tag in (b"VP8L", b"VP8 "):
+                if payload_mode is not None:
+                    raise ValueError("Multiple WebP image payloads")
+                payload_mode = tag == b"VP8L"
+            offset += 8 + size + (size & 1)
+        if offset != end or payload_mode is None:
+            raise ValueError("Invalid WebP image payload")
+        return "WEBP", payload_mode
+    raise ValueError("Unsupported image format (only PNG, JPEG, and WebP are supported)")
+
+
+def encode_avif(image_path, encoder, lossy_quality=80):
+    try:
+        from PIL import Image, ImageOps, features
+    except ImportError as error:
+        raise ValueError("Install Pillow with AVIF support (Pillow >= 11.3) to generate comparisons") from error
+    if not features.check("avif"):
+        raise ValueError("Pillow must include AVIF decoding support for lossless verification")
+    raw = image_path.read_bytes()
+    source_format, lossless = source_encoding(raw)
+    with Image.open(io.BytesIO(raw)) as original:
+        if getattr(original, "n_frames", 1) != 1:
+            raise ValueError(f"Animated images are not supported: {image_path}")
+        original.load()
+        reference = ImageOps.exif_transpose(original)
+        pixels = reference.convert("RGBA" if reference.has_transparency_data else "RGB")
+        with tempfile.TemporaryDirectory(prefix="image-compare-") as directory:
+            directory = Path(directory)
+            # avifenc accepts PNG/JPEG. Normalize WebP and grayscale to RGB(A) PNG
+            # so identity-matrix lossless encoding uses all three color planes.
+            # Normalize EXIF orientation into pixels when needed; retain ICC metadata.
+            if source_format == "WEBP" or original.mode in ("1", "L", "LA") or original.getexif().get(274, 1) != 1:
+                source = directory / "input.png"
+                metadata = {key: reference.info[key] for key in ("icc_profile", "exif", "xmp") if key in reference.info}
+                pixels.save(source, **metadata)
+            else:
+                source = directory / ("input.png" if source_format == "PNG" else "input.jpg")
+                source.write_bytes(raw)
+            output = directory / "output.avif"
+            command = [encoder, "--codec", "aom", "--speed", "6", "--jobs", "2"]
+            if lossless:
+                command += ["--lossless", "--yuv", "444", "--range", "full", "--cicp", "1/13/0"]
+            else:
+                command += ["--qcolor", str(lossy_quality), "--qalpha", "100", "--yuv", "444"]
+            command += [str(source), str(output)]
+            options = {"creationflags": subprocess.IDLE_PRIORITY_CLASS} if os.name == "nt" else {}
+            result = subprocess.run(command, capture_output=True, text=True, **options)
+            if result.returncode:
+                raise ValueError(f"AVIF encoding failed for {image_path}: {result.stderr.strip()} {result.stdout.strip()}")
+            avif = output.read_bytes()
+            if lossless:
+                with Image.open(io.BytesIO(avif)) as decoded:
+                    reference = reference.convert(pixels.mode)
+                    decoded_pixels = decoded.convert(pixels.mode)
+                    if decoded_pixels.size != reference.size or decoded_pixels.tobytes() != reference.tobytes():
+                        raise ValueError(f"AVIF lossless pixel verification failed: {image_path}")
+            return avif
+
+
+def find_encoder(encoder=None):
+    selected = encoder or os.environ.get("AVIFENC") or shutil.which("avifenc")
+    if selected:
+        return str(selected)
+    cached = Path.home() / ".cache" / "pyxis" / "libavif" / ("avifenc.exe" if os.name == "nt" else "avifenc")
+    if cached.is_file():
+        return str(cached)
+    raise ValueError("avifenc is required: install libavif tools or pass --avifenc PATH")
+
+
+def read_manifest(path, encoder=None, lossy_quality=80):
     manifest = json.loads(path.read_text(encoding="utf-8-sig"))
     if not isinstance(manifest, dict):
         raise ValueError("Manifest must be a JSON object")
@@ -359,16 +457,8 @@ def read_manifest(path):
             raise ValueError(f"Image {index}: path must be a nonempty string")
         image_path = (path.parent / source).resolve()
         if image_path not in encoded:
-            raw = image_path.read_bytes()
-            if raw.startswith(b"\x89PNG\r\n\x1a\n"):
-                mime = "image/png"
-            elif raw.startswith(b"\xff\xd8\xff"):
-                mime = "image/jpeg"
-            elif raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
-                mime = "image/webp"
-            else:
-                raise ValueError(f"Unsupported image format: {image_path} (only PNG, JPEG, and WebP are supported)")
-            encoded[image_path] = f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
+            avif = encode_avif(image_path, find_encoder(encoder), lossy_quality)
+            encoded[image_path] = "data:image/avif;base64," + base64.b64encode(avif).decode("ascii")
         images.append({"values": combination, "src": encoded[image_path], "label": source})
     return title, {"dimensions": dimensions, "images": images}
 
@@ -377,9 +467,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path, help="JSON image manifest")
     parser.add_argument("-o", "--output", type=Path, required=True, help="Output HTML path")
+    parser.add_argument("--avifenc", help="Path to libavif avifenc (otherwise AVIFENC, PATH, or the Pyxis cache)")
+    parser.add_argument("--lossy-quality", type=int, default=80, choices=range(1, 100), metavar="1..99",
+                        help="AVIF quality for lossy input only (default: 80)")
     args = parser.parse_args()
     try:
-        title, data = read_manifest(args.manifest.resolve())
+        title, data = read_manifest(args.manifest.resolve(), args.avifenc, args.lossy_quality)
         payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
         head, _, tail = PAGE.partition("__DATA__")
         page = head.replace("__TITLE__", html.escape(title)) + payload + tail

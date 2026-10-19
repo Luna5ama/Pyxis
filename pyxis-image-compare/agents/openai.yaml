@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pyxis image compare"
+  short_description: "Compare local images in an offline AVIF viewer"
+  default_prompt: "Use $pyxis-image-compare to create a self-contained HTML comparison from local images, preserving lossless inputs with lossless AVIF."

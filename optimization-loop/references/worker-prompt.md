@@ -37,6 +37,12 @@ publication, and cleanup. Do not create goals, schedule workers, or spawn agents
 - Reject and fully restore regressions, ambiguous results, correctness failures,
   missing metrics, and invalid comparisons. Never commit a rejected candidate.
 
+For visual acceptance, retain original captures with exact revision and capture
+settings, and report their absolute paths and comparison dimensions to the
+coordinator. Use `$pyxis-image-compare` when assigned to produce the viewer;
+prefer PNG/lossless WebP for pixel-sensitive comparisons. Coordinate ownership
+of the manifest/output path so workers do not overwrite a shared artifact.
+
 ## Integrate and publish
 
 - Keep the verified candidate isolated, reread the target branch, and replay the

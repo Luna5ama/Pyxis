@@ -59,6 +59,16 @@ Otherwise run the single-agent workflow below.
   rejected ideas so a long loop does not repeat them.
 - Use each accepted result as the next baseline.
 
+## Image comparisons
+
+When visual output is part of correctness acceptance, use `$pyxis-image-compare`
+(Pyxis image compare) for an offline baseline/candidate viewer when available.
+Record the exact revisions, capture settings and image paths in the manifest or
+accompanying evidence. Use PNG or lossless WebP captures for exact comparisons;
+the skill preserves them with lossless AVIF. JPEG and lossy WebP are recompressed
+with lossy AVIF and cannot establish pixel equality. A viewer supports visual
+review; it does not replace the measurement or correctness gates.
+
 ## Commit rule
 
 Invoking this loop authorizes a commit for each verified win unless the user

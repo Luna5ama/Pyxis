@@ -1,4 +1,4 @@
-"""Browser regression checks; requires Pillow, Playwright, and installed Chrome."""
+"""Browser regression checks; requires AVIF-enabled Pillow, avifenc, Playwright, and installed Chrome."""
 
 import base64
 import ctypes
@@ -61,7 +61,9 @@ class CopyImageTests(unittest.TestCase):
                             return raw, Image.open(io.BytesIO(raw)).convert("RGBA")
 
                         page.evaluate("setScale(16); centerX = 20; centerY = 30; draw()")
-                        self.assertEqual(copied()[0], (root / "original.png").read_bytes())
+                        raw, image = copied()
+                        self.assertIn(b"avif", raw[:32])
+                        self.assertEqual(image.tobytes(), original.convert("RGBA").tobytes())
                         page.locator("#copy-original").uncheck()
                         for scale in (0.25, 0.5, 1, 2):
                             page.evaluate("s => {centerX=60; centerY=40; setScale(s)}", scale)
@@ -96,7 +98,9 @@ class CopyImageTests(unittest.TestCase):
                         page.locator("#copy-original").check()
                         page.evaluate("select(['B', '2'])")
                         page.wait_for_function("shownImage && shownImage.naturalWidth === 60")
-                        self.assertEqual(copied()[0], (root / "other.png").read_bytes())
+                        raw, image = copied()
+                        self.assertIn(b"avif", raw[:32])
+                        self.assertEqual(image.tobytes(), Image.open(root / "other.png").convert("RGBA").tobytes())
                         page.evaluate("select(['A', '2'])")
                         self.assertTrue(page.locator("#copy-image").is_hidden())
                         self.assertIsNone(page.locator("#copy-image").get_attribute("src"))
