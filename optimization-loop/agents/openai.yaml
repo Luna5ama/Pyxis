@@ -1,4 +1,0 @@
-interface:
-  display_name: "Optimization Loop"
-  short_description: "Run continuous measured optimization rounds"
-  default_prompt: "Use $optimization-loop to run continuous measured optimization rounds and commit only verified wins."

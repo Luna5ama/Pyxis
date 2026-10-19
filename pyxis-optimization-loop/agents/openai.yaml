@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pyxis Optimization Loop"
+  short_description: "Run continuous measured optimization rounds"
+  default_prompt: "Use $pyxis-optimization-loop to run continuous measured optimization rounds and commit only verified wins."

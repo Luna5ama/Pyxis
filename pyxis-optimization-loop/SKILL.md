@@ -1,9 +1,9 @@
 ---
-name: optimization-loop
+name: pyxis-optimization-loop
 description: Run evidence-driven iterative optimization rounds that analyze a target, test one attributable candidate, measure it against the accepted baseline, and commit only verified wins. Use when the user explicitly asks for an optimization loop, asks to continue optimizing, specifies a duration or round count, or requests parallel optimization across supplied Git worktrees. Do not use for ordinary one-shot implementation or review.
 ---
 
-# Optimization Loop
+# Pyxis Optimization Loop
 
 Use the repository's instructions and measurement tools as the project-specific
 contract. For explicitly requested parallel work across two or more supplied Git
@@ -58,16 +58,6 @@ Otherwise run the single-agent workflow below.
   failures, missing metrics, invalid samples, and incomparable runs. Remember
   rejected ideas so a long loop does not repeat them.
 - Use each accepted result as the next baseline.
-
-## Image comparisons
-
-When visual output is part of correctness acceptance, use `$pyxis-image-compare`
-(Pyxis image compare) for an offline baseline/candidate viewer when available.
-Record the exact revisions, capture settings and image paths in the manifest or
-accompanying evidence. Use PNG or lossless WebP captures for exact comparisons;
-the skill preserves them with lossless AVIF. JPEG and lossy WebP are recompressed
-with lossy AVIF and cannot establish pixel equality. A viewer supports visual
-review; it does not replace the measurement or correctness gates.
 
 ## Commit rule
 
