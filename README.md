@@ -6,6 +6,7 @@ Personal Codex skills.
 
 Available skills:
 
+- [`pyxis-design-discussion`](pyxis-design-discussion/SKILL.md) — **Pyxis Design Discussion** guides collaborative reasoning for complex technical modules and system architecture, with evidence-based tradeoffs and conditional closure.
 - [`pyxis-image-compare`](pyxis-image-compare/SKILL.md) — **Pyxis image compare** creates offline HTML image comparisons with lossless AVIF for PNG/lossless WebP and configurable lossy AVIF for JPEG/lossy WebP.
 - [`pyxis-optimization-loop`](pyxis-optimization-loop/SKILL.md) runs measured optimization rounds.
 - [`pyxis-loop`](pyxis-loop/SKILL.md) tracks persistent implementation tasks and their evidence.

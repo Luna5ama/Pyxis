@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pyxis Design Discussion"
+  short_description: "围绕复杂技术模块与系统架构开展设计推理，比较取舍并按证据收敛"
+  default_prompt: "使用 $pyxis-design-discussion 与我讨论当前设计，主动核对假设和真实消费者，比较有意义的取舍，并明确已定事项、证据边界与未决问题。"
