@@ -15,6 +15,8 @@ active = None
 rounds = 0
 pending = {}
 history = []
+if kind == 'claude' and '--resume' in sys.argv:
+    session = sys.argv[sys.argv.index('--resume') + 1]
 
 
 def record(action, **fields):
@@ -174,11 +176,20 @@ for line in sys.stdin:
         continue
     if method == 'initialize':
         rpc(req_id, {})
-    elif method == 'thread/start':
+    elif method in ('thread/start', 'thread/resume'):
+        if method == 'thread/resume':
+            session = event['params']['threadId']
+            record('resume', session_id=session)
         record('thread', params=event['params'])
         rpc(req_id, dict(thread=dict(id=session), sandbox=dict(type='workspaceWrite'), approvalPolicy='on-request'))
     elif method == 'pyxis/session/start':
+        if event['params'].get('resumeSessionId'):
+            session = event['params']['resumeSessionId']
+            record('resume', session_id=session)
         rpc(req_id, dict(sessionId=session, effectiveConfig=dict(approvalPolicy='ask')))
+    elif method == 'pyxis/session/suspend':
+        record('suspend', session_id=session)
+        rpc(req_id, dict(suspended=True))
     elif method in ('model/list','pyxis/models/list'):
         rpc(req_id, dict(data=[dict(model='test-model', supportedReasoningEfforts=[dict(reasoningEffort='high')])], nextCursor=None))
     elif method == 'thread/backgroundTerminals/list':

@@ -38,6 +38,8 @@ class Client:
             config[kind] = dict(executable=sys.executable, args=[str(ROOT/'tests'/('fake_dynamic.py' if dynamic else 'fake_harness.py')), kind], harness=kind, mode='auto' if dynamic else 'plan', model='test-model', reasoning_effort='high', description=f'{kind} specialist', prefix_prompt='stable prefix', provider='test-provider', dsh_module_root=str(ROOT), cache=cache or dict(enabled=False),request_timeout_seconds=request_timeout)
         if dynamic:
             config = dict(version=2, runtimes=config, specialists={'legacy':config['claude']} if legacy else {}, limits=limits or {})
+        elif limits:
+            config = dict(version=2, runtimes=config.copy(), specialists=config, limits=limits)
         path = Path(self.temp.name)/'config.json'
         path.write_text(json.dumps(config), encoding='utf-8')
         self.p = subprocess.Popen([str(BINARY), str(path)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', env={**os.environ, 'PYXIS_TEST_LOG':str(self.log), **env})
@@ -45,7 +47,7 @@ class Client:
         self.pending_responses = {}
         self.reader = threading.Thread(target=lambda: [self.messages.put(json.loads(line)) for line in self.p.stdout], daemon=True)
         self.reader.start()
-        self.errors = threading.Thread(target=lambda: self.logs.extend(self.p.stderr.readlines()), daemon=True)
+        self.errors = threading.Thread(target=lambda: [self.logs.append(line) for line in self.p.stderr], daemon=True)
         self.errors.start()
         self.send(1, 'initialize', {'protocolVersion':'2025-11-25','capabilities':{},'clientInfo':{'name':'test','version':'1'}})
         assert 'result' in self.get(1)
@@ -91,6 +93,23 @@ class Client:
 class Integration(unittest.TestCase):
     def client(self, **kwargs):
         client=Client(**kwargs); self.addCleanup(client.close); return client
+
+    def test_specialists_resume_after_idle_process_exit(self):
+        c = self.client(kinds=('claude','codex','dsh'), limits=dict(idle_seconds=1))
+        for seq, kind in enumerate(('claude','codex','dsh'), 10):
+            c.call(seq, 'first', kind)
+            first = c.get(seq)['result']['structuredContent']
+            end = time.monotonic() + 5
+            while time.monotonic() < end:
+                if any('session_idle_reaped' in line and f'"tool":"{kind}"' in line for line in c.logs):
+                    break
+                time.sleep(.05)
+            else:
+                self.fail(f'{kind} was not suspended')
+            c.call(seq + 10, 'second', kind)
+            second = c.get(seq + 10)['result']['structuredContent']
+            self.assertEqual(first['session_id'], second['session_id'])
+            self.assertEqual(sum(e['action']=='spawn' and e['kind']==kind for e in c.events()), 2)
 
     def test_discovery_is_lazy_and_sessions_are_private_to_process(self):
         c=self.client()

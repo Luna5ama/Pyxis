@@ -46,6 +46,31 @@ class Dynamic(unittest.TestCase):
         self.error(c,'agent_start',harness='claude',cwd=c.temp.name,prompt='x',executable='other')
         self.error(c,'agent_start',harness='codex',cwd=c.temp.name,prompt='x',provider='other')
 
+    def test_lazy_start_and_idle_resume_all_backends(self):
+        c = self.client(limits=dict(idle_seconds=1))
+        c.send(2, 'tools/list')
+        c.get(2)
+        self.tool(c, 'agent_list')
+        time.sleep(.2)
+        self.assertEqual(c.events(), [])
+        for kind in ('claude', 'codex', 'dsh'):
+            task = self.start(c, kind)
+            first = self.wait(c, task)
+            native_id = first['result']['session_id']
+            end = time.monotonic() + 5
+            while time.monotonic() < end:
+                status = self.tool(c, 'agent_status', task_id=task['task_id'])
+                if any(e['event'].get('type') == 'session_suspended' for e in status['events']):
+                    break
+                time.sleep(.05)
+            else:
+                self.fail('idle process was not suspended')
+            self.assertFalse(self.tool(c, 'agent_status', session_id=task['session_id'])['invalid'])
+            later = self.tool(c, 'agent_send', session_id=task['session_id'], prompt='second')
+            self.assertEqual(self.wait(c, later)['result']['session_id'], native_id)
+            self.assertEqual(sum(e['action']=='spawn' and e['kind']==kind for e in c.events()), 2)
+            self.tool(c, 'agent_close', session_id=task['session_id'])
+
     def test_fifo_different_cwd_and_independent_sessions(self):
         c = self.client()
         a = self.start(c,prompt='delay:.3')

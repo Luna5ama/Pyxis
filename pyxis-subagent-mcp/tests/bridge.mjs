@@ -121,7 +121,22 @@ try {
   assert.equal(result.text,'done');assert.equal(result.usage.inputTokens,3);
   assert.deepEqual(result.usage.raw_samples,[{inputTokens:3}]);
   assert.equal((await transport.call('pyxis/session/compact',params)).compacted,true);
-  await transport.call('shutdown',{});assert(disposed);
+  await transport.call('pyxis/session/suspend',params);assert(disposed);
+  await transport.call('shutdown',{});
+  // Reconnect through the native resume API, with the same setup and policy.
+  ctx.agents.resume=async options=>{
+    assert.equal(options.resumeSessionId,session.sessionId);
+    assert.equal(options.sessionId,undefined);
+    return ctx.agents.create({...options,sessionId:options.resumeSessionId});
+  };
+  bridge.apply(ctx);
+  const resumedTransport=globalThis.transport;
+  await resumedTransport.call('initialize',{cwd:fixture,provider:'native',model:'model'});
+  const resumed=await resumedTransport.call('pyxis/session/start',{mode:'plan',interactive:true,prefixPrompt:'resumed prefix',resumeSessionId:session.sessionId});
+  assert.equal(resumed.sessionId,session.sessionId);
+  assert.equal(root.prefix,'resumed prefix');
+  assert.equal(root.session.policy,'ask');
+  await resumedTransport.call('shutdown',{});
   console.log('DSH bridge service tests passed: setup, native question registration, fixed mode, approvals, controls, child barrier, usage, compaction, cleanup');
 } finally {
   assert.equal(dirname(fixture),base);

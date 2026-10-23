@@ -27,7 +27,7 @@ cargo build --release --locked --target-dir target/candidate
 | `agent_close` | `session_id`；停止活动任务、取消队列、清理进程树 |
 | `agent_compact` | `session_id`，可选超时和幂等键；排入原生压缩任务 |
 
-每个会话拥有自己的 harness 进程。创建后固定 harness、provider、model、effort、cwd 和 mode；换配置应创建新会话。`cwd` 必须是已有的绝对目录，可以是调用者准备的 worktree。Pyxis 不创建 checkout；同目录写入由调用者协调。
+所有 harness CLI 均按需启动：MCP 初始化、工具发现、状态查询不会启动 CLI，任务获得执行名额后才启动。显式 `agent_models` 查询会临时启动对应 CLI，并在查询结束后退出。每个会话独立拥有原生上下文，空闲默认 15 分钟后退出整个 CLI 进程树；下一次任务通过 Claude `--resume`、Codex `thread/resume` 或 DSH 原生持久化恢复相同会话，恢复失败明确报错，不创建空白上下文。空闲期间仍保留 Pyxis 会话及其容量名额，使用 `agent_close` 释放。运行中和等待交互的任务不会被空闲回收。创建后固定 harness、provider、model、effort、cwd 和 mode；换配置应创建新会话。`cwd` 必须是已有的绝对目录，可以是调用者准备的 worktree。Pyxis 不创建 checkout；同目录写入由调用者协调。
 
 省略模型和 effort 使用本机 runtime 默认值；显式 `effort: null` 选择原生默认值。`provider` 只适用于 DSH。模型目录提供能力提示，不验证账户权限，也不限制未列出的精确模型名。明确不支持的参数报错，后端原生错误直接可见，不替换模型或降低 effort。
 
@@ -56,7 +56,7 @@ cargo build --release --locked --target-dir target/candidate
 | `active_tasks` | 8；等待交互仍占名额 |
 | `sessions` | 16 |
 | `queued_tasks` | 128 |
-| `idle_seconds` | 7200 |
+| `idle_seconds` | 900；空闲 CLI 退出时间，原生上下文保留以便按需恢复；失效会话在此期限后移除 |
 | `retained_tasks` | 最近 256 个已结束任务 |
 | `retained_events` | 每任务最多 1024 个事件，同时受字节预算限制 |
 

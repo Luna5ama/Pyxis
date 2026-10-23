@@ -40,7 +40,7 @@ impl Default for Limits {
             active_tasks: 8,
             sessions: 16,
             queued_tasks: 128,
-            idle_seconds: 7200,
+            idle_seconds: 900,
             retained_tasks: 256,
             retained_events: 1024,
         }

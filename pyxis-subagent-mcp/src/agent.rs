@@ -890,6 +890,8 @@ impl Manager {
         mut controls: mpsc::Receiver<Control>,
     ) {
         let mut backend: Option<Backend> = None;
+        let mut resume_id: Option<String> = None;
+        let mut idle_since = tokio::time::Instant::now();
         let mut last_task: Option<String> = None;
         let mut cache_due: Option<crate::session::Deadline> = None;
         let mut ttl = config.cache.ttl_seconds;
@@ -909,6 +911,21 @@ impl Manager {
             };
             if !queued {
                 tokio::select! {
+                    _=tokio::time::sleep_until(idle_since + Duration::from_secs(self.limits.idle_seconds)), if backend.is_some()=>{
+                        let result = tokio::time::timeout(Duration::from_secs(10), backend.as_mut().unwrap().suspend()).await;
+                        match result {
+                            Ok(Ok(id))=>{
+                                resume_id=Some(id);
+                                backend=None;
+                                cache_due=None;
+                                if let Some(tid)=&last_task {self.event(tid,json!({"type":"session_suspended"}));}
+                            }
+                            _=>{
+                                if let Some(tid)=&last_task {self.invalidate_by_task(tid,"native session suspension failed; context cannot be safely resumed",false);}
+                                break;
+                            }
+                        }
+                    },
                     _=notified=>continue,
                     control=controls.recv()=>{if let Some(control)=control{Self::stale(control);}else{break;}},
                     event=async {match backend.as_mut(){Some(b)=>b.idle_event().await,None=>std::future::pending().await}}=>{
@@ -984,10 +1001,12 @@ impl Manager {
             let started = tokio::time::Instant::now();
             let startup = if backend.is_none() {
                 Some(
-                    tokio::time::timeout_at(
-                        tokio::time::Instant::from_std(deadline),
-                        Backend::start_dynamic(&config),
-                    )
+                    tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), async {
+                        match resume_id.as_deref() {
+                            Some(id) => Backend::resume(&config, true, id).await,
+                            None => Backend::start_dynamic(&config).await,
+                        }
+                    })
                     .await,
                 )
             } else {
@@ -1056,6 +1075,9 @@ impl Manager {
                 }
             }
             self.finish(&sid, &tid, outcome);
+            if !automatic {
+                idle_since = tokio::time::Instant::now();
+            }
             last_task = Some(tid.clone());
             drop(permit);
             if lost {
@@ -1179,6 +1201,7 @@ impl Manager {
             let previous = session.queue.len();
             session.queue.retain(|id| pending.contains(id));
             if session.running.is_none()
+                && session.invalid
                 && session.queue.is_empty()
                 && session.last_used.elapsed() >= Duration::from_secs(self.limits.idle_seconds)
             {

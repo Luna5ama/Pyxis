@@ -66,12 +66,34 @@ pub struct Backend {
 
 impl Backend {
     pub async fn start(config: &AgentConfig) -> Result<Self> {
-        Self::start_impl(config, false, false).await
+        Self::start_impl(config, false, false, None).await
     }
     pub async fn start_dynamic(config: &AgentConfig) -> Result<Self> {
-        Self::start_impl(config, true, false).await
+        Self::start_impl(config, true, false, None).await
     }
-    async fn start_impl(config: &AgentConfig, interactive: bool, discovery: bool) -> Result<Self> {
+    pub async fn resume(config: &AgentConfig, interactive: bool, session_id: &str) -> Result<Self> {
+        Self::start_impl(config, interactive, false, Some(session_id)).await
+    }
+    pub async fn suspend(&mut self) -> Result<String> {
+        ensure!(
+            !self.session_id.is_empty(),
+            "cannot suspend without native session identity"
+        );
+        if self.kind == Harness::Dsh {
+            self.rpc(
+                "pyxis/session/suspend",
+                json!({"sessionId":self.session_id}),
+            )
+            .await?;
+        }
+        Ok(self.session_id.clone())
+    }
+    async fn start_impl(
+        config: &AgentConfig,
+        interactive: bool,
+        discovery: bool,
+        resume: Option<&str>,
+    ) -> Result<Self> {
         let mut command = Command::new(&config.executable);
         command
             .args(&config.args)
@@ -80,6 +102,9 @@ impl Backend {
         let mut bridge = None;
         match config.harness {
             Harness::Claude => {
+                if let Some(id) = resume {
+                    command.args(["--resume", id]);
+                }
                 if interactive {
                     command.env("CLAUDE_CODE_SDK_READS_SESSION_STATE", "1");
                     // Use the SDK host identity supported by the installed CLI
@@ -133,7 +158,7 @@ impl Backend {
         let mut backend = Self {
             process: Process::spawn(command)?,
             kind: config.harness,
-            session_id: String::new(),
+            session_id: resume.unwrap_or_default().to_owned(),
             model: config.model.clone(),
             effort: config.reasoning_effort.clone(),
             mode: config.mode,
@@ -184,16 +209,22 @@ impl Backend {
                         if let Some(sandbox)=&config.sandbox {params["sandbox"]=json!(sandbox);}
                         if config.mode==Mode::Plan {params["sandbox"]=json!("read-only");}
                     }
-                    let thread = backend.rpc("thread/start",params).await?;
+                    let method = if let Some(id) = resume {
+                        params["threadId"] = json!(id);
+                        "thread/resume"
+                    } else { "thread/start" };
+                    let thread = backend.rpc(method,params).await?;
                     backend.session_id = thread["thread"]["id"].as_str().context("thread/start missing thread.id")?.to_owned();
+                    ensure!(resume.is_none_or(|id| id == backend.session_id), "resumed a different Codex thread");
                     let mut native=thread; native.as_object_mut().unwrap().remove("thread");backend.effective_config["native"]=native;
                 }
             }
             Harness::Dsh => {
                 backend.rpc("initialize", json!({"cwd":config.cwd,"provider":config.provider,"model":config.model,"reasoningEffort":config.reasoning_effort,"discoveryOnly":discovery})).await?;
                 if !discovery {
-                    let session = backend.rpc("pyxis/session/start", json!({"mode":config.mode,"prefixPrompt":config.prefix_prompt,"interactive":interactive})).await?;
+                    let session = backend.rpc("pyxis/session/start", json!({"mode":config.mode,"prefixPrompt":config.prefix_prompt,"interactive":interactive,"resumeSessionId":resume})).await?;
                     backend.session_id = session["sessionId"].as_str().context("dsh missing sessionId")?.to_owned();
+                    ensure!(resume.is_none_or(|id| id == backend.session_id), "resumed a different DSH session");
                     backend.effective_config["native"]=session["effectiveConfig"].clone();
                 }
             }
@@ -234,7 +265,7 @@ impl Backend {
     pub async fn models(config: &AgentConfig, provider_filter: Option<&str>) -> Result<Value> {
         match config.harness {
             Harness::Codex => {
-                let mut backend = Self::start_impl(config, true, true).await?;
+                let mut backend = Self::start_impl(config, true, true, None).await?;
                 let mut models = Vec::new();
                 let mut cursor = Value::Null;
                 loop {
@@ -255,7 +286,7 @@ impl Backend {
                 )
             }
             Harness::Dsh => {
-                let mut backend = Self::start_impl(config, true, true).await?;
+                let mut backend = Self::start_impl(config, true, true, None).await?;
                 let models = backend
                     .rpc("pyxis/models/list", json!({"provider":provider_filter}))
                     .await?;
@@ -264,7 +295,7 @@ impl Backend {
                 )
             }
             Harness::Claude => {
-                let backend = Self::start_impl(config, true, true).await?;
+                let backend = Self::start_impl(config, true, true, None).await?;
                 Ok(
                     json!({"harness":"claude","default":{"model":config.model,"effort":config.reasoning_effort},"models":backend.metadata["models"],"cli_version":backend.metadata["claude_code_version"],"capabilities":{"steer":"interrupt_and_continue","compact":"native","interactive":true},"catalog_is_entitlement_check":false}),
                 )

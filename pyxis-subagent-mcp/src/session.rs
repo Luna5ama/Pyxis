@@ -71,6 +71,8 @@ struct State {
     deadline: Option<Deadline>,
     ttl: Option<u64>,
     session_id: Option<String>,
+    resume_id: Option<String>,
+    failure: Option<String>,
     live: Option<OwnedSemaphorePermit>,
     last_used: Option<Instant>,
 }
@@ -103,6 +105,9 @@ impl Session {
                 .map_err(|_| anyhow::anyhow!("queue capacity reached"))?,
         );
         let mut state = self.state.lock().await;
+        if let Some(error) = &state.failure {
+            bail!("{error}");
+        }
         state.deadline = None;
         self.changed.notify_one();
         // Move ownership out of state. Cancellation, timeout and protocol failures
@@ -121,7 +126,10 @@ impl Session {
                         .try_acquire_owned()
                         .map_err(|_| anyhow::anyhow!("session capacity reached"))?,
                 );
-                backend = Some(Backend::start(&self.config).await?);
+                backend = Some(match state.resume_id.as_deref() {
+                    Some(id) => Backend::resume(&self.config, false, id).await?,
+                    None => Backend::start(&self.config).await?,
+                });
             }
             backend.as_mut().unwrap().run(prompt, false).await
         })
@@ -134,6 +142,7 @@ impl Session {
             ),
         };
         state.session_id = Some(outcome.session_id.clone());
+        state.resume_id = None;
         state.backend = backend;
         state.live = live;
         state.last_used = Some(Instant::now());
@@ -177,7 +186,17 @@ impl Session {
                     _=async {match idle {Some(time)=>sleep_until(time).await,None=>std::future::pending().await}}=>{
                         let mut state=session.state.lock().await;
                         if state.last_used.map(|time|time+session.resources.idle)!=idle {continue;}
-                        state.backend=None;state.live=None;state.deadline=None;state.last_used=None;
+                        let Some(mut backend) = state.backend.take() else { continue; };
+                        let suspended = timeout(std::time::Duration::from_secs(10), backend.suspend()).await;
+                        match suspended {
+                            Ok(Ok(id))=>state.resume_id=Some(id),
+                            _=>{
+                                state.failure=Some("native session suspension failed; context cannot be safely resumed".into());
+                                log(&session.name,"session_suspend_failed",json!({"session_id":state.session_id}));
+                            }
+                        }
+                        drop(backend);
+                        state.live=None;state.deadline=None;state.last_used=None;
                         log(&session.name,"session_idle_reaped",json!({"session_id":state.session_id}));
                     },
                     _ = async { match due { Some(d) => sleep_until(d.compact_at).await, None => std::future::pending().await } } => {

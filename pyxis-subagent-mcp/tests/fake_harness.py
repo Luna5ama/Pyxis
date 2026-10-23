@@ -9,6 +9,8 @@ kind = sys.argv[1]
 log = os.environ['PYXIS_TEST_LOG']
 session = f'{kind}-{os.getpid()}'
 turn = 0
+if kind == 'claude' and '--resume' in sys.argv:
+    session = sys.argv[sys.argv.index('--resume') + 1]
 
 def record(action, **fields):
     with open(log, 'a', encoding='utf-8') as file:
@@ -44,7 +46,8 @@ for line in sys.stdin:
         id = event.get('id')
         if method == 'initialize':
             rpc(id, {})
-        elif method == 'thread/start':
+        elif method in ('thread/start', 'thread/resume'):
+            if method == 'thread/resume': session = event['params']['threadId']
             record('thread', params=event['params'])
             rpc(id, {'thread': {'id': session}})
         elif method in ['turn/start', 'thread/compact/start']:
@@ -67,8 +70,11 @@ for line in sys.stdin:
             record('initialize', params=event['params'])
             rpc(id, {'serverInfo': {'name': 'deepseek-harness-sdk-runtime'}})
         elif method == 'pyxis/session/start':
+            session = event['params'].get('resumeSessionId') or session
             record('session', params=event['params'])
             rpc(id, {'sessionId': session})
+        elif method == 'pyxis/session/suspend':
+            rpc(id, {'suspended': True})
         elif method == 'pyxis/session/run':
             record('prompt', prompt=event['params']['prompt'])
             rpc(id, {'text': 'dsh-answer', 'stopReason': 'completed', 'usage': {}})

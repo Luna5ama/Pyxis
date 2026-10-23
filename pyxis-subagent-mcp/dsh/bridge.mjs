@@ -121,8 +121,9 @@ export function apply(ctx) {
         if (!selection) throw new Error('Not initialized');
         if (owned) throw new Error('Session already exists');
         if (!['plan', 'auto'].includes(params.mode)) throw new Error('Invalid mode');
-        owned = `pyxis-${randomUUID()}`;
-        handle = await ctx.agents.create({ sessionId: owned, meta: { cwd }, agentOptions: selection,
+        owned = params.resumeSessionId ?? `pyxis-${randomUUID()}`;
+        const open = params.resumeSessionId ? ctx.agents.resume.bind(ctx.agents) : ctx.agents.create.bind(ctx.agents);
+        handle = await open({ ...(params.resumeSessionId ? { resumeSessionId: owned } : { sessionId: owned, meta: { cwd } }), agentOptions: selection,
           setup(agentCtx) {
             agentCtx.inject(['tools', 'userQuestions', 'systemPrompt'], scope => {
               // The SDK profile omits the model-facing question consumer.
@@ -140,6 +141,11 @@ export function apply(ctx) {
         // Native plan guidance; DSH explicitly describes this as soft guidance.
         ctx.planMode.set(root, params.mode === 'plan');
         return { sessionId: owned, effectiveConfig: { ...selection, cwd, mode: params.mode, approvalPolicy: interactive ? 'ask' : 'never', sandbox: ctx.sandboxPolicy.resolve({ session: root.session }), planModeIsSoftGuidance: true } };
+      }
+      if (method === 'pyxis/session/suspend') {
+        agent(params.sessionId);
+        await dispose();
+        return { suspended: true };
       }
       if (method === 'pyxis/session/compact') {
         const root = agent(params.sessionId);
