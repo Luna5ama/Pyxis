@@ -38,9 +38,9 @@ target branch.
 
 ## Round start and baseline
 
-- At the start of every round, each worker cleans up only its own prior candidate
-  state and explicitly checks out the current target-branch HEAD detached in its
-  supplied worktree, even if it already appears detached and current.
+- At the start of a new round, each worker verifies the current target baseline
+  and uses it detached in its supplied worktree. Clean up only owned candidate
+  state; do not repeat checkout when already current or reset a live candidate.
 - The target branch is the only accepted baseline. Every published win advances
   it; all later comparisons and replays use the new tip.
 - One synchronized round ends after all scheduled workers report accepted,
@@ -49,20 +49,23 @@ target branch.
 
 ## Publication
 
-- The responsible worker replays its isolated win onto the current target tip in
-  detached state, resolves conflicts, and reruns correctness and measurement
-  gates against that exact tip.
+- Reserve the integration slot before replay and final confirmation so workers
+  do not repeatedly invalidate one another by advancing the target. The responsible
+  worker inspects intervening changes, replays onto the current tip if needed,
+  resolves conflicts, and checks affected correctness and performance obligations.
+  Reuse evidence only when the relevant artifact and conditions still match.
 - The worker creates one narrow commit, then advances the target branch with a
   compare-and-swap fast-forward from the exact tip it integrated against. Never
   force or overwrite the target branch.
-- If another worker advanced the branch first, replay onto the new tip, resolve
-  conflicts, rerun all gates, create the replacement commit, and retry.
+- If the target changed despite coordination, retain the patch and evidence,
+  inspect the delta, and recheck affected obligations before retrying. Do not
+  blindly repeat every gate until a publication race happens to succeed.
 - Rejected or blocked work produces no commit.
 
 ## Finish
 
-Audit the target branch under the shared measurement contract. Collect or clean
-up in-flight worker-owned state, confirm every accepted commit is reachable from
+Audit the target using applicable evidence and checking uncovered obligations.
+Collect or clean up in-flight worker-owned state, confirm every accepted commit is reachable from
 the target branch, and leave supplied worktrees detached with unrelated state
 untouched. Report the final tip, commits, rejected candidates, measurements,
 conflicts, worker statuses, and blockers.

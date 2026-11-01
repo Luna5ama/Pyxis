@@ -1,5 +1,8 @@
 # Optimization Worker Contract
 
+Follow the parent [optimization loop](../SKILL.md) for hypothesis selection,
+cheap screening, bounded repeats, and confirmation.
+
 Act as one persistent worker in a coordinated optimization run. The target
 branch is the only accepted state. The coordinator owns run tracking, boundary
 assignment, and shared runtime access. You own candidate selection,
@@ -13,14 +16,14 @@ publication, and cleanup. Do not create goals, schedule workers, or spawn agents
   inconsistent fields instead of inferring them.
 - Work only in the assigned worktree and boundary. Preserve unrelated state and
   report an unsafe checkout rather than substituting another path or branch.
-- Stay assigned for the full run. Report each phase and wait for coordinator
-  follow-up rather than treating one candidate as the end of the assignment.
+- Stay assigned for the agreed run. Report useful candidate results or blockers,
+  then continue authorized work; do not wait for follow-up at every phase.
 
 ## Round start
 
-- Clean up only your own prior candidate state, then explicitly check out the
-  current target-branch HEAD detached in the assigned worktree. Repeat this at
-  every round even when HEAD already appears detached and current.
+- Verify the current target baseline and work detached in the assigned worktree.
+  Clean up only owned candidate state; do not repeat checkout when already
+  current or reset a live candidate.
 - Verify and record the exact detached HEAD. Never create a persistent worker
   branch.
 
@@ -33,15 +36,17 @@ publication, and cleanup. Do not create goals, schedule workers, or spawn agents
 - Implement one attributable candidate at a time and compare it with the
   detached target baseline under the coordinator's measurement contract.
 - Require semantic correctness and repeatable primary-metric improvement while
-  watching guardrails and the workload sentinel. Remeasure small or noisy deltas.
-- Reject and fully restore regressions, ambiguous results, correctness failures,
-  missing metrics, and invalid comparisons. Never commit a rejected candidate.
+  watching guardrails and the workload sentinel. Bound repeat costs as directed
+  by the parent loop; defer unresolved candidates with their patches and evidence.
+- Reject clear regressions and correctness failures, and restore owned edits.
+  Invalid comparisons establish no win; never commit an unconfirmed candidate.
 
 ## Integrate and publish
 
-- Keep the verified candidate isolated, reread the target branch, and replay the
-  change onto its current HEAD while detached. Resolve conflicts and rerun every
-  correctness and measurement gate after the replay.
+- Reserve the coordinator's integration slot, reread the target, and inspect
+  intervening changes. Replay the isolated candidate if needed, resolve conflicts,
+  and check affected correctness and performance obligations. Reuse evidence only
+  when the relevant artifact and conditions still match.
 - Stage only the verified optimization, run repository commit checks, and create
   its final commit without waiting for separate authorization.
 - Include the verified primary-metric performance change in the commit message:
@@ -51,8 +56,8 @@ publication, and cleanup. Do not create goals, schedule workers, or spawn agents
 - Atomically fast-forward the target branch from the exact HEAD used for
   integration to the final commit. Use an expected-old-value ref update or an
   equivalent compare-and-swap operation. Never force or overwrite the branch.
-- If the target moved, replay onto the new HEAD, resolve conflicts, rerun gates,
-  create the replacement commit, and retry.
+- If the target moved, retain the candidate and evidence, inspect the delta, and
+  recheck affected obligations before retrying; do not blindly repeat all gates.
 - Report accepted, rejected, or blocked status; exact timings or objective
   measurements; checks; commit and target tip; conflicts; touched files;
   detached HEAD; worktree status; and useful next candidates.

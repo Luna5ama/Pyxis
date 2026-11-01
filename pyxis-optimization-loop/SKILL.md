@@ -1,95 +1,85 @@
 ---
 name: pyxis-optimization-loop
-description: Run evidence-driven iterative optimization rounds that analyze a target, test one attributable candidate, measure it against the accepted baseline, and commit only verified wins. Use when the user explicitly asks for an optimization loop, asks to continue optimizing, specifies a duration or round count, or requests parallel optimization across supplied Git worktrees. Do not use for ordinary one-shot implementation or review.
+description: Search iteratively for useful performance improvements, from algorithms and data flow to local code; screen candidates cheaply and commit confirmed wins. Use for an explicitly requested optimization loop, continued optimization, or time/round-bounded performance search. Not for ordinary implementation or review.
 ---
 
 # Pyxis Optimization Loop
 
-Use the repository's instructions and measurement tools as the project-specific
-contract. For explicitly requested parallel work across two or more supplied Git
-worktrees, read [references/multi-worktree.md](references/multi-worktree.md).
-Otherwise run the single-agent workflow below.
+Use the search budget to improve the user's outcome. Keep a known accepted
+baseline and follow the repository's runtime, measurement, and commit conventions.
+For explicitly requested parallel optimization across supplied worktrees, use
+[the existing multi-worktree procedure](references/multi-worktree.md).
 
-## Scope and tracking
+## Set the boundary
 
-- Pin the requested repository, worktree, branch or revision, target, and output
-  boundary before editing. Preserve the user's literal choices.
-- Establish the measurement contract: primary objective metric and direction,
-  accepted baseline, correctness gates, guardrail metrics, workload sentinel,
-  environment identity, harness configuration, warmup, sample count, statistic,
-  comparison ordering, and noise policy. Discover these from repository
-  instructions and current tooling when the user does not specify them.
-- If the user specifies a duration, call `create_goal` once with that duration
-  and target in the objective, track it with `get_goal`, and complete it only
-  after the duration and final audit are satisfied. Set a token budget only when
-  explicitly requested.
-- If the user specifies a round count, run exactly that many rounds. Otherwise
-  run one round.
-- A round is a bounded search on one target. It ends with one verified win, no
-  defensible win, or a blocker, and may include multiple rejected candidates.
+- Preserve the requested target, checkout, quality, and runtime constraints.
+  Choose a primary metric tied to the real consumer and relevant guardrails;
+  faster helpers do not alone establish faster loading or higher FPS.
+- Track the requested duration or round count in the existing run record, with
+  time reserved for confirmation and cleanup. With neither, run one search round;
+  a round may test several candidates before one win or exhaustion. Create a goal
+  only when explicitly requested, not merely because a duration was given.
+- Continue within the agreed boundary after each candidate and across compaction.
+  Do not require another user message to continue, stop after a default single
+  round during a timed run, or fill time with redundant tests. Explain a real
+  blocker, exhausted leads, or user stop that ends the run early.
+- Preserve unrelated work. Restart or replace a stateful runtime only through a
+  recovery path authorized by the user or repository instructions; check actual
+  job termination before retrying or reusing it.
 
-## Continuous execution
+## 1. Choose a useful hypothesis
 
-- Keep the loop active in one long-running turn until the requested duration or
-  round count and final audit are complete. Candidate or round completion is
-  never a turn boundary, and continuing must not require another user message.
-- Send concise progress updates while working without returning a final response.
-  After an accepted commit, begin the next round immediately. After rejection,
-  fully restore the candidate and continue searching immediately.
-- If infrastructure forces continuation or context compaction, resume the same
-  tracked run and accepted baseline as one logical turn. Do not create a new
-  goal, reset elapsed time, or reinterpret the requested boundary.
-- End early only for a genuine blocker, required new authority, an exhausted
-  search with no defensible candidate, or an explicit user stop.
+Start with what the consumer needs and why the current algorithm performs this
+much work. Consider eliminating work, incremental updates, reuse, a different
+algorithm or representation, and the dependency chain before settling on local
+tuning. Use profiles, work counts, scaling, and counterexamples to decide which
+level matters; keep the user's scope and resolve changes to required semantics.
 
-## Optimization rule
+Choose by expected useful benefit and the cost of learning whether it works.
+Find the cheapest test of the uncertain premise before building a large design.
+One candidate means one attributable hypothesis, which can span an algorithm or
+several files. If nearby parameter changes keep producing noise-sized gains,
+reconsider the algorithm and critical path. Large changes need not win, and
+candidate count is not the objective.
 
-- Analyze the current target and choose the most valuable defensible candidate.
-  Treat previous sessions as process evidence, not a limit on possible ideas.
-- Change one attributable candidate at a time and compare it with the latest
-  accepted baseline under the same measurement contract.
-- Verify the exact revision, executable or artifact, configuration, workload,
-  and successful load before accepting measurement samples.
-- Require semantic correctness and repeatable improvement in the primary metric.
-  Watch relevant guardrails and the workload sentinel for displaced regressions.
-- Alternate source ordering or use adjacent/reverse pairs when drift matters.
-  Remeasure small or noisy deltas according to the contract.
-- Reject and fully restore regressions, ambiguous tradeoffs, correctness
-  failures, missing metrics, invalid samples, and incomparable runs. Remember
-  rejected ideas so a long loop does not repeat them.
-- Use each accepted result as the next baseline.
+## 2. Spend testing effort where it changes the decision
 
-## Commit rule
+Use the existing harness and recipe. Verify the loaded baseline/candidate, input,
+quality, workload, and measurement conditions; keep the actual consumed files
+stable through the last case, including later reloads. Retain raw results and
+comparison settings so the claim can be checked.
 
-Invoking this loop authorizes a commit for each verified win unless the user
-explicitly says not to commit. After the correctness and measurement gates pass,
-stage only that optimization, run the repository's commit checks, and commit it
-immediately. Use a concise imperative subject that names the optimization
-directly and matches the wording and capitalization of recent first-parent
-commits on the receiving branch, unless repository instructions specify another
-convention. The commit message must include the verified performance change for
-the primary metric: baseline and candidate values with units, the relative
-percentage, and enough measurement context to identify the comparison. Put this
-evidence in the body when it would make the subject noisy. State the metric
-direction unambiguously so a lower-is-better negative delta is not mistaken for
-a regression. A rejected or blocked candidate produces no commit. When one
-logical optimization owns tracked source and generated outputs across
-repositories, create one atomic commit in each repository without including
-unrelated state.
+Start with the cheapest decisive correctness or performance check. Stop a clear
+failure early. Only promising candidates receive broader, risk-appropriate
+correctness checks and fresh performance confirmation; screening samples alone
+are not an accepted win. Keep valid reversals and check displaced costs.
 
-## Runtime boundary
+Before repeating a noisy result, ask whether another block can resolve a useful
+effect within the remaining budget. If not, save the candidate and uncertainty
+and try another direction. Invalid runs or inconclusive results are not measured
+regressions. Do not impose an unrequested whole-frame precision gate that the
+harness cannot resolve; a user-required bound remains unverified until supported.
 
-Use the repository-declared measurement harness and verify its current capability
-instead of relying on stale assumptions. Do not restart, replace, or silently
-switch a stateful external runtime unless the user authorized it or applicable
-repository instructions explicitly make it part of the workflow. Exhaust safe,
-non-destructive recovery, then report a blocker when comparable measurement is
-not possible.
+Use existing asynchronous jobs while preparing the next hypothesis on isolated
+inputs. A separate low-cost runner is optional when substantial repetitive tool
+operation would otherwise occupy the coordinator. Use the existing delegation
+mechanism; the loop does not need its own routing protocol. Serialize measurements
+that share a GPU/runtime and keep candidate preparation out of the measured state.
 
-## Finish
+## 3. Accept and continue
 
-Run a final comparable correctness and performance audit from the accepted tip.
-Confirm unrelated work is untouched. Report the final revision, accepted
-commits, rejected candidates, measurement conditions, absolute and relative
-metric changes, checks performed, and blockers. Do not close a timed goal before
-its requested duration and final audit are complete.
+Accept only correct, confirmed improvements within the required guardrails.
+Invoking this loop authorizes a local commit for each such win unless the user
+says otherwise; it does not authorize a push. Stage only the optimization, run
+required commit checks, and follow the receiving branch's commit style. Include
+baseline/candidate values, units, direction, relative change, conditions, and the
+supported scope in the commit body. Advance the accepted baseline after the win.
+
+Restore owned candidate edits after rejection or deferral and keep useful evidence
+and patches. At integration and finish, reuse evidence that still applies to the
+actual artifact and conditions; check affected interactions and uncovered risks.
+A changed commit ID or the end of a run alone does not require a full test matrix.
+
+Report accepted revisions and supported gains, rejected or deferred directions,
+remaining evidence gaps, and the next useful hypothesis. A local win does not
+establish that the user's entire performance problem is solved.
