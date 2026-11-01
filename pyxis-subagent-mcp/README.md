@@ -12,6 +12,12 @@ cargo build --release --locked --target-dir target/candidate
 
 程序只有一个位置参数：JSON 配置路径。stdout 只承载 MCP JSONL，stderr 输出诊断。运行 MCP 不需要 Python 或额外的 agent SDK；DSH 使用它自身的 Node runtime 加载二进制内嵌的薄插件。
 
+## 目录与 skill 安装
+
+MCP 实现与 companion skill 共用本目录：`SKILL.md` 和 `agents/openai.yaml` 是 skill，`src/`、`dsh/`、`scripts/`、`tests/` 是实现与开发工具。
+
+安装 skill 时，仅将 `SKILL.md` 与 `agents/` 复制到 `$CODEX_HOME/skills/pyxis-subagent/`（通常为 `~/.codex/skills/pyxis-subagent/`）；skill 名称仍为 `pyxis-subagent`。不要把包含本地配置和 `target/` 的整个开发目录复制到 skills 目录。`scripts/deploy.py` 默认从本目录的 `SKILL.md` 部署正文，`agents/` 元数据需单独复制。
+
 ## 统一会话接口
 
 | 工具 | 输入与行为 |

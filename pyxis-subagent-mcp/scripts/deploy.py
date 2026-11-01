@@ -50,7 +50,7 @@ def main():
     parser.add_argument('--binary',type=Path)
     parser.add_argument('--runtime-config',type=Path)
     parser.add_argument('--codex-config',type=Path,required=True)
-    parser.add_argument('--skill-source',type=Path,default=ROOT.parent/'pyxis-subagent/SKILL.md')
+    parser.add_argument('--skill-source',type=Path,default=ROOT/'SKILL.md')
     parser.add_argument('--skill-destination',type=Path)
     parser.add_argument('--rollback',type=Path)
     parser.add_argument('--apply',action='store_true')
