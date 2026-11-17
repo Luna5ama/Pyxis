@@ -4,6 +4,8 @@ Personal Codex skills.
 
 [`pyxis-subagent-mcp`](pyxis-subagent-mcp/README.md) provides a Rust stdio MCP bridge for Claude Code, Codex CLI, and DeepSeek Harness specialists.
 
+[`pyxis-codex-app-mcp`](pyxis-codex-app-mcp/README.md) is a dependency-free stdio adapter that exposes the running Codex desktop app's tools to Claude Code and Claude Desktop.
+
 Available skills:
 
 - [`pyxis-image-compare`](pyxis-image-compare/SKILL.md) — **Pyxis image compare** creates offline HTML image comparisons with lossless AVIF for PNG/lossless WebP and configurable lossy AVIF for JPEG/lossy WebP.
