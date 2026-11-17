@@ -1,11 +1,13 @@
 ---
 name: pyxis-image-compare
-description: Generate an offline, self-contained HTML image comparator from local PNG, JPEG, or WebP images, with arbitrary comparison dimensions, nearest-neighbor zoom, panning, and history toggling.
+description: Generate an offline HTML image comparator from local PNG, JPEG, or WebP images, with arbitrary comparison dimensions, nearest-neighbor zoom, panning, and history toggling.
 ---
 
 # Pyxis image compare
 
-Use `scripts/generate_compare.py` to turn an image manifest into a single offline HTML file. The generator embeds AVIF images without resizing or exposure adjustments. PNG and lossless WebP inputs use true lossless AVIF; JPEG and lossy WebP inputs use high-quality lossy AVIF (quality 80, 4:4:4, lossless alpha). WebP mode is determined from its VP8L/VP8 payload, including extended WebP containers, rather than its filename. Lossless output is decoded and checked pixel-for-pixel before embedding; quality 100 alone is not a substitute for lossless encoding.
+Use `scripts/generate_compare.py` to turn an image manifest into an offline HTML viewer. It converts images to AVIF without resizing or exposure adjustments. PNG and lossless WebP inputs use true lossless AVIF; JPEG and lossy WebP inputs use high-quality lossy AVIF (quality 80, 4:4:4, lossless alpha). WebP mode is determined from its VP8L/VP8 payload, including extended WebP containers, rather than its filename. Lossless output is decoded and checked pixel-for-pixel; quality 100 alone is not a substitute for lossless encoding.
+
+By default, inputs totaling at most 64 MiB are embedded in one HTML file; larger collections use a sibling `<output-stem>.assets/` directory, with images loaded on demand and a bounded decoded-image cache. The directory must travel with the HTML when copying or sharing the viewer. The viewer remains offline and keeps every comparison dimension native. Use `--storage embedded` when a single file is essential, or `--storage external` to force a lightweight page. A very large embedded file may exceed browser memory limits.
 
 Requirements: Python with Pillow >= 11.3 and AVIF decoding support, plus the official [libavif tools](https://github.com/AOMediaCodec/libavif/releases) (`avifenc` with the AOM encoder). Locate an existing encoder first; if absent, obtain the official platform binary in a local tool cache and pass `--avifenc PATH`. The script does not download dependencies or fall back to lossy compression for lossless sources. Use `AVIFENC` or PATH for an already installed encoder. The generator also discovers `~/.cache/pyxis/libavif/avifenc` (`avifenc.exe` on Windows), allowing a cached official binary without changing PATH. Run time-insensitive encoding at the lowest process priority; on Windows the generator launches the encoder at Idle priority.
 
@@ -42,4 +44,4 @@ Page controls:
 - Drag with the primary mouse button to pan. Alt + wheel up doubles the zoom; Alt + wheel down halves it. Zoom preserves the viewport center, and changing any dimension preserves zoom and position. Focused input controls retain native keyboard shortcuts.
 - "Copy original image" is enabled by default: the browser's right-click "Copy image" command copies the complete embedded image (AVIF-decoded pixels, including recompression for lossy sources). When disabled, it copies the visible image region with nearest-neighbor zoom and cropping, excluding surrounding blank space. Output scale uses CSS pixels and is independent of display pixel density. Opening the context menu stops auto blink.
 
-Create the manifest, run the script, and deliver the generated HTML. Verify that the requested conditions map to the correct images. The generator does not extract data or generate source images.
+Create the manifest, run the script, and deliver the generated HTML together with its assets directory when present. Verify that the requested conditions map to the correct images. The generator does not extract data or generate source images.

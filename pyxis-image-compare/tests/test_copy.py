@@ -20,6 +20,36 @@ spec.loader.exec_module(generator)
 
 
 class CopyImageTests(unittest.TestCase):
+    def test_external_images_load_from_file_and_cache_is_bounded(self):
+        with tempfile.TemporaryDirectory() as directory, sync_playwright() as playwright:
+            root = Path(directory)
+            entries = []
+            for i in range(8):
+                Image.new("RGB", (30 + i, 20), (i * 25, 50, 120)).save(root / f"{i}.png")
+                entries.append({"path": f"{i}.png", "dimensions": {"Scene": str(i)}})
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"images": entries}), encoding="utf-8")
+            title, data = generator.read_manifest(manifest, asset_dir=root / "compare.assets")
+            page_path = root / "compare.html"
+            page_path.write_text(generator.PAGE.replace("__TITLE__", title).replace(
+                "__DATA__", json.dumps(data)), encoding="utf-8")
+            browser = playwright.chromium.launch(channel="chrome")
+            try:
+                page = browser.new_page()
+                errors = []
+                page.on("pageerror", lambda error: errors.append(str(error)))
+                page.goto(page_path.as_uri())
+                for i in range(8):
+                    page.get_by_role("button", name=str(i), exact=True).click()
+                    page.wait_for_function("width => shownImage && shownImage.naturalWidth === width", arg=30 + i)
+                    self.assertLessEqual(page.evaluate("cache.size"), 4)
+                self.assertTrue(page.locator("#copy-image").get_attribute("src").endswith(".avif"))
+                page.get_by_role("button", name="Current ↔ Previous").click()
+                page.wait_for_function("shownImage && shownImage.naturalWidth === 36")
+                self.assertEqual(errors, [])
+            finally:
+                browser.close()
+
     def test_native_image_target(self):
         with tempfile.TemporaryDirectory() as directory, sync_playwright() as playwright:
             root = Path(directory)

@@ -7,6 +7,7 @@ import io
 import json
 from pathlib import Path
 import random
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -120,6 +121,40 @@ class AvifTests(unittest.TestCase):
             self.assertTrue(entry["src"].startswith("data:image/avif;base64,"))
             with Image.open(io.BytesIO(base64.b64decode(entry["src"].split(",", 1)[1]))) as decoded:
                 self.assertEqual(decoded.convert("RGBA").tobytes(), self.image.tobytes())
+
+    def test_external_assets_are_relative_deduplicated_and_lossless(self):
+        self.image.save(self.root / "source.png")
+        path = self.root / "manifest.json"
+        path.write_text(json.dumps({"images": [
+            {"path": "source.png", "dimensions": {"Version": "A"}},
+            {"path": "source.png", "dimensions": {"Version": "B"}},
+        ]}), encoding="utf-8")
+        assets = self.root / "compare space.assets"
+        _, data = generator.read_manifest(path, self.encoder, asset_dir=assets)
+        self.assertEqual(data["images"][0]["src"], data["images"][1]["src"])
+        self.assertTrue(data["images"][0]["src"].startswith("compare%20space.assets/"))
+        files = list(assets.glob("*.avif"))
+        self.assertEqual(len(files), 1)
+        with Image.open(files[0]) as decoded:
+            self.assertEqual(decoded.convert("RGBA").tobytes(), self.image.tobytes())
+        files[0].write_bytes(b"corrupted")
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            generator.read_manifest(path, self.encoder, asset_dir=assets)
+
+    def test_auto_storage_selects_external_for_large_inputs(self):
+        source = self.root / "large.png"
+        with source.open("wb") as stream:
+            stream.truncate(64 * 1024 * 1024 + 1)
+        manifest = self.root / "manifest.json"
+        manifest.write_text(json.dumps({"images": [
+            {"path": source.name, "dimensions": {"Scene": "A"}},
+        ]}), encoding="utf-8")
+        output = self.root / "compare.html"
+        with patch.object(generator, "encode_avif", return_value=b"test-avif"), \
+                patch.object(sys, "argv", ["generate_compare.py", str(manifest), "-o", str(output)]):
+            self.assertEqual(generator.main(), 0)
+        self.assertIn("compare.assets/", output.read_text(encoding="utf-8"))
+        self.assertEqual(len(list((self.root / "compare.assets").glob("*.avif"))), 1)
 
 
 if __name__ == "__main__":

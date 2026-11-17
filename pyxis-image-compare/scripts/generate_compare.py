@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Generate a self-contained, multi-dimensional image comparator."""
+"""Generate an offline, multi-dimensional image comparator."""
 
 import argparse
 import base64
 import html
+import hashlib
 import json
 import io
 import os
@@ -13,6 +14,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 import sys
+from urllib.parse import quote
 
 
 PAGE = r'''<!doctype html>
@@ -90,8 +92,15 @@ let scale = 1, centerX = 0, centerY = 0, initialized = false;
 let shownImage = null, timer = null, generation = 0, drag = null;
 let preparedCopy = false;
 const cache = new Map();
+const cacheLimit = 4;
 
 function load(item) {
+  if (cache.has(item.src)) {
+    const entry = cache.get(item.src);
+    cache.delete(item.src);
+    cache.set(item.src, entry);
+    return entry;
+  }
   if (!cache.has(item.src)) {
     const entry = {image: null, error: null};
     entry.promise = new Promise(resolve => {
@@ -101,6 +110,7 @@ function load(item) {
       image.src = item.src;
     });
     cache.set(item.src, entry);
+    while (cache.size > cacheLimit) cache.delete(cache.keys().next().value);
   }
   return cache.get(item.src);
 }
@@ -183,7 +193,10 @@ function updateStatus() {
 
 function preload() {
   const axis = Number(compare.value);
-  for (const value of data.dimensions[axis].values) {
+  const choices = data.dimensions[axis].values;
+  const index = choices.indexOf(current[axis]);
+  for (const offset of [-1, 1]) {
+    const value = choices[(index + offset + choices.length) % choices.length];
     const values = [...current]; values[axis] = value;
     const item = images.get(imageKey(values));
     if (item) load(item);
@@ -417,7 +430,7 @@ def find_encoder(encoder=None):
     raise ValueError("avifenc is required: install libavif tools or pass --avifenc PATH")
 
 
-def read_manifest(path, encoder=None, lossy_quality=80):
+def read_manifest(path, encoder=None, lossy_quality=80, asset_dir=None):
     manifest = json.loads(path.read_text(encoding="utf-8-sig"))
     if not isinstance(manifest, dict):
         raise ValueError("Manifest must be a JSON object")
@@ -458,7 +471,17 @@ def read_manifest(path, encoder=None, lossy_quality=80):
         image_path = (path.parent / source).resolve()
         if image_path not in encoded:
             avif = encode_avif(image_path, find_encoder(encoder), lossy_quality)
-            encoded[image_path] = "data:image/avif;base64," + base64.b64encode(avif).decode("ascii")
+            if asset_dir is None:
+                encoded[image_path] = "data:image/avif;base64," + base64.b64encode(avif).decode("ascii")
+            else:
+                asset_dir.mkdir(parents=True, exist_ok=True)
+                filename = hashlib.sha256(avif).hexdigest() + ".avif"
+                target = asset_dir / filename
+                if not target.exists():
+                    target.write_bytes(avif)
+                elif hashlib.sha256(target.read_bytes()).hexdigest() != filename[:-5]:
+                    raise ValueError(f"Existing image asset does not match its filename: {target}")
+                encoded[image_path] = quote(asset_dir.name) + "/" + filename
         images.append({"values": combination, "src": encoded[image_path], "label": source})
     return title, {"dimensions": dimensions, "images": images}
 
@@ -470,9 +493,21 @@ def main():
     parser.add_argument("--avifenc", help="Path to libavif avifenc (otherwise AVIFENC, PATH, or the Pyxis cache)")
     parser.add_argument("--lossy-quality", type=int, default=80, choices=range(1, 100), metavar="1..99",
                         help="AVIF quality for lossy input only (default: 80)")
+    parser.add_argument("--storage", choices=("auto", "embedded", "external"), default="auto",
+                        help="Embed images or put them in a sibling directory (default: auto)")
     args = parser.parse_args()
     try:
-        title, data = read_manifest(args.manifest.resolve(), args.avifenc, args.lossy_quality)
+        manifest_path = args.manifest.resolve()
+        storage = args.storage
+        if storage == "auto":
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+            entries = manifest.get("images", []) if isinstance(manifest, dict) else []
+            entries = entries if isinstance(entries, list) else []
+            paths = {(manifest_path.parent / e["path"]).resolve() for e in entries
+                     if isinstance(e, dict) and isinstance(e.get("path"), str)}
+            storage = "external" if sum(p.stat().st_size for p in paths) > 64 * 1024 * 1024 else "embedded"
+        asset_dir = args.output.parent / (args.output.stem + ".assets") if storage == "external" else None
+        title, data = read_manifest(manifest_path, args.avifenc, args.lossy_quality, asset_dir)
         payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
         head, _, tail = PAGE.partition("__DATA__")
         page = head.replace("__TITLE__", html.escape(title)) + payload + tail
