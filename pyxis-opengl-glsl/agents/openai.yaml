@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pyxis OpenGL GLSL"
+  short_description: "审查 OpenGL GLSL 的访存方式、寄存器占用和工作组大小"
+  default_prompt: "用 $pyxis-opengl-glsl 审查这个着色器，找出值得实测的性能改动。"
