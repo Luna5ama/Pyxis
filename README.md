@@ -9,7 +9,7 @@ Personal Codex skills.
 Available skills:
 
 - [`pyxis-image-compare`](pyxis-image-compare/SKILL.md) — **Pyxis image compare** creates offline HTML image comparisons with lossless AVIF for PNG/lossless WebP and configurable lossy AVIF for JPEG/lossy WebP.
-- [`pyxis-opengl-glsl`](pyxis-opengl-glsl/SKILL.md) uses compiler output to guide OpenGL shader rewrites for control flow, register lifetimes, and memory access. [Measured cases and counterexamples](docs/research/opengl-glsl.md)
+- [`pyxis-opengl-glsl`](pyxis-opengl-glsl/SKILL.md) guides OpenGL shader authors on control flow, register lifetimes, texture and buffer access, and compute workgroup sizing. [Measured cases and counterexamples](docs/research/opengl-glsl.md)
 - [`pyxis-optimization-loop`](pyxis-optimization-loop/SKILL.md) runs measured optimization rounds.
 - [`pyxis-loop`](pyxis-loop/SKILL.md) tracks persistent implementation tasks and their evidence.
 - [`pyxis-subagent`](pyxis-subagent-mcp/SKILL.md) describes the Pyxis native-agent MCP.

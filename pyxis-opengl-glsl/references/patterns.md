@@ -2,7 +2,7 @@
 
 ## 热路径反复判断浮点数是否有效
 
-先确定调用方接受有限值、正有限值，还是一个有上下界的区间。若 FP32 热路径在内联后反复做 `isnan` 与 `isinf` 短路判断，可以把有限性收成一次指数位测试。
+先确定调用方接受有限值、正有限值，还是一个有上下界的区间。若共享的 FP32 谓词在每次取样时反复做 `isnan` 与 `isinf` 短路判断，可以把有限性收成一次指数位测试。
 
 ```glsl
 bool finite32(float x) {
@@ -22,7 +22,7 @@ bool positiveFinite32(float x) {
 
 若天空才需要散射结果，把散射调用及结果留在天空分支，地面分支直接重置历史。照明先算独立的辐照度，再解码材质，避免整份材质跨过大气 LUT 采样。表面 BRDF 只读粗糙度时直接传粗糙度，次表面散射的颜色转换留给会执行散射的路径。
 
-若一组四点读取最终只提供一个标量，算出权重后就读取并归约，只让标量跨过后续历史写入。若回写 GLSL 又把表达式推迟到首次使用处，可尝试以下调用形态，然后检查生成代码和耗时。
+若一组四点读取最终只提供一个标量，算出权重后就读取并归约，只让标量跨过后续历史写入。可以用一个只输出该标量的小函数表达这段依赖。
 
 ```glsl
 void gatherWeightedAlpha(sampler2D historyTex, vec2 uv, vec4 weights, out float value) {
@@ -30,7 +30,7 @@ void gatherWeightedAlpha(sampler2D historyTex, vec2 uv, vec4 weights, out float 
 }
 ```
 
-调用方保留原有的权重顺序、钳制和写入顺序。`out` 是针对这个归约位置的候选，是否保留由具体工具链决定。跨分支状态依然很多时，优先找出最后一次消费的位置，再考虑拆 helper、重算便宜的标量或调整内联。
+调用方保留原有的权重顺序、钳制和写入顺序。这里用 `out` 是因为传入的旧值没有用途，且每条返回路径都写入结果。若 helper 需要读改写，保留 `inout`。判断收益时看需要同时存活的值以及实际 pass 的耗时。
 
 ## 选择算术还是条件读取
 
@@ -55,7 +55,7 @@ void insertPeak(float x, inout float first, inout float second) {
 | --- | --- | --- |
 | 同一个 2×2 邻域的一个通道 | 用一次 `textureGather` 供四个权重使用 | 基础 mip、四个返回分量和权重的对应关系、边缘寻址 |
 | 同一邻域中每点的完整 RGBA | 在四个整数位置各做一次 `texelFetch`，复用返回向量 | 显式 LOD、越界处理、通道与权重顺序 |
-| 前一 pass 写完、本 pass 只读的图像 | 用相同格式的 sampler 读取历史或链表。当前 pass 仍会改写的资源保留原读写路径 | 生产者写完后为纹理读取建立可见性。宿主使用 image 写后再采样时检查 `GL_TEXTURE_FETCH_BARRIER_BIT` |
+| 前一 pass 写完、本 pass 只读的图像 | 用值类型匹配的 sampler 做 `texelFetch`，与原来的 `imageLoad` 比较。当前 pass 仍会改写的资源保留原读写路径 | 匹配格式解释、坐标和 LOD。宿主使用 image 写后再采样时检查 `GL_TEXTURE_FETCH_BARRIER_BIT` |
 | 每条 lane 顺序扫描一段，整个 subgroup 同时读大步长 | 让相邻 lane 同时取相邻字或向量，各自贡献一部分位掩码，再合并 | 对齐与步长、子组宽度和参与 lane、屏障和最终位序 |
 
 若位索引在 SSBO 读取前就已知，可先算 `uint bit = 1u << (index & 31u)`，读取 `uint word` 后只做 `(word & bit) != 0u`。这样把可独立调度的移位移出了依赖内存返回的路径。
