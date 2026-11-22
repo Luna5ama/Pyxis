@@ -59,3 +59,9 @@ void insertPeak(float x, inout float first, inout float second) {
 | 每条 lane 顺序扫描一段，整个 subgroup 同时读大步长 | 让相邻 lane 同时取相邻字或向量，各自贡献一部分位掩码，再合并 | 对齐与步长、子组宽度和参与 lane、屏障和最终位序 |
 
 若位索引在 SSBO 读取前就已知，可先算 `uint bit = 1u << (index & 31u)`，读取 `uint word` 后只做 `(word & bit) != 0u`。这样把可独立调度的移位移出了依赖内存返回的路径。
+
+## 图集复用与跨帧历史
+
+从实际使用的 sampler、image 绑定和生成后的坐标变换，找出每次访问落在哪块底层存储、哪一级 mip、哪一层和哪个 texel 范围。两个纹理视图可能共享存储，要把级别和层换算到父纹理。图集内使用线性过滤时，把边缘会读到的相邻 texel 也算进去。两份值都还要用时，给它们互不覆盖的区域。旧值最后一次读取完成后，原区域可交给临时结果。按后续访问方式保证写入可见。[OpenGL 纹理视图](https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTextureView.xhtml) · [OpenGL 内存屏障](https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMemoryBarrier.xhtml)
+
+例如，偶数帧把 `31` 写入历史图块 A，奇数帧把 `47` 写入 B，各在下一帧读回同一 texel。如果中间的临时 pass 在两帧都向 A 的这个 texel 写 `90`，两次历史回读就是 `90, 47`。用独立区域作对照，应读到 `31, 47`。核对改动时保留中间 pass，在奇、偶帧分别从真正使用历史的 pass 回读。确认输入值一致后再比较耗时。
