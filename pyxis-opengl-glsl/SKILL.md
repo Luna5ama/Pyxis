@@ -1,15 +1,20 @@
 ---
 name: pyxis-opengl-glsl
-description: 用于编写、审查和优化 OpenGL GLSL 着色器，涵盖 SSBO 编译耗时、访存方式、寄存器生命周期和计算着色器工作组大小。
+description: 编写、审查和优化 OpenGL GLSL 着色器。排查慢 pass 时，从 SPIR-V 或回写 GLSL 定位重复判断、跨分支存活的值和低效访存，再用目标 GPU 验证源码改动。
 ---
 
 # Pyxis OpenGL GLSL
 
-- Avoid reserved identifiers such as `packed`, `buffer`, and `sample`.
-- Avoid excessive or very large fixed-size SSBO arrays: some drivers aggressively unroll loops over them, causing extreme compile times. Prefer a trailing unsized array where the layout permits it.
-- Prefer aligned wide loads/stores when all components are needed: one `vec4` access over four scalar `float` accesses. Preserve buffer layout and verify actual code generation/timing.
-- Prefer `texelFetch` over `imageLoad` for equivalent read-only access; `imageLoad` has been slower in observed workloads. Preserve format, coordinates, and memory visibility/barrier semantics; this is not a universal speed guarantee.
-- Keep branch-specific state inside its branch; construct/load values near use and consume them promptly. Avoid carrying large structs or many `inout` values across branches or helper calls. Consider cheap recomputation instead of retaining long-lived intermediates.
-- Minimize simultaneously live values: process independent samples or stages sequentially instead of preloading all inputs; keep only fields needed later, and pass only required values to helpers rather than copying entire state structs.
-- Start Ampere compute tuning at 128 or 256 threads per workgroup. On CC 8.6, 64-thread groups hit the 16-block/SM limit at 32 of 48 possible resident warps; this occupancy ceiling does not apply identically to CC 8.0. Larger groups do not guarantee saturation: registers, shared memory, and workload still matter.
-- Treat performance guidance as hypotheses: compare affected-pass GPU timings under matching conditions, and inspect registers/spills/active warps when needed. Accept measured wins, not source-level simplification alone.
+## 写进源码
+
+- **让分支拥有自己的状态。** 只在使用结果的分支里取样、解码和着色。另一条路径仍执行它负责的历史重置或写入。两个昂贵阶段彼此独立时，先完成能归约为少量值的一段，再构造下一段的大结构体。给 BRDF 等 helper 传实际读取的字段。
+- **按输入的变化频率安排计算。** 多个邻居共用同一视线和法线时，在循环外算一次会反复用到的点积，把随邻居变化的材质留在循环内。若只用一次，把读取和消费放在一起。少数固定方向因动态索引而展开出复杂代码时，可比较同一 helper 的常量实参调用。
+- **按分支里的工作选写法。** 重复的浮点有效性判断先写清接受域和溢出行为。纯数值排序可试 `min/max`。零权重能省掉昂贵读取时，把取样放到判断之后。适用条件和可直接改写的 GLSL 见[代码示例](references/patterns.md)。
+- **按消费者排访存。** 四邻点的同一通道可试 `textureGather`，每点都要 RGBA 可试逐点 `texelFetch`。只读历史可比较 sampler 读取，核对格式、LOD、边界及前序写入的可见性。SSBO 字段全部用到且布局对齐时可整向量读写，同时看相邻 lane 在同一条指令中访问的地址。
+- **处理编译和工作组限制。** 标识符避开 `packed`、`buffer`、`sample`。大定长 SSBO 数组导致编译器过度展开时，若缓冲布局允许，可把末尾成员改为不定长数组。Ampere 可从每组 128、256 线程试起。CC 8.6 上每组 64 线程最多驻留 32/48 个 warp，实际选择结合寄存器、共享内存和 pass 耗时。
+
+## 用编译结果排查慢 pass
+
+固定实际入口、宏和 `spirv-opt` 选项，对照基线与候选。遇到成串的 `OpIsNan`、`OpIsInf`，回查被反复内联的谓词。遇到集中的 `OpPhi`，追踪哪个值跨过分支且在哪里最后使用。选一个能解释差异的改写落到源码。交付链使用 SPIRV-Cross 时，再看驱动收到的 GLSL 是否在预期位置归约或取样。
+
+要报告加速时，用实际运行的产物在同场景、设置和工作量下配对测受影响 pass。原生源码和回写包分别使用各自的基线。结果接近噪声时交换顺序或补同源码对照。需要解释差异时再查寄存器、spill 和活跃 warp。只有静态结果时，把它写成待测的源码候选。
